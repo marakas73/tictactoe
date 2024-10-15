@@ -1,0 +1,20 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+<changeSet id="v1-0-add-rating-column-to-user-table" author="marakas">
+    <addColumn tableName="users">
+        <column name="rating" type="INT">
+            <constraints nullable="false"/>
+        </column>
+    </addColumn>
+
+    <update tableName="users">
+        <column name="rating" value="1000"/>
+        <where>rating IS NULL</where>
+    </update>
+</changeSet>
+
+</databaseChangeLog>

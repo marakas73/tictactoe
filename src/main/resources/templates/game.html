@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крестики-Нолики</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #game-board {
+            display: grid;
+            gap: 5px;
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+        button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Крестики-Нолики</h1>
+<div id="status"></div>
+<div id="players">
+    <div>Игрок 1: <span id="player1"></span></div>
+    <div>Игрок 2: <span id="player2"></span></div>
+</div>
+<div>Чей ход: <span id="current-turn"></span></div>
+<div>Первый игрок играет за: <span id="symbol1"></span></div>
+<div>Второй игрок играет за: <span id="symbol2"></span></div>
+<button id="start-game">Начать игру</button>
+<button id="exit-game">Выйти из игры</button>
+<div id="game-board"></div>
+
+<script src="/js/game.js"></script>
+</body>
+</html>
+
+

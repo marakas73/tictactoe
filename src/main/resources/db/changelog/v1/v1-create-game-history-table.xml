@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="v1-0-create-game-record-table" author="Vlad">
+        <createTable tableName="game_history">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" nullable="false" />
+            </column>
+            <column name="winner_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="looser_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="is_draw" type="boolean">
+                <constraints nullable="false" />
+            </column>
+            <column name="player1" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="player2" type="bigint">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="game_history"
+                baseColumnNames="winner_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_game_history_winner" />
+        <addForeignKeyConstraint
+                baseTableName="game_history"
+                baseColumnNames="looser_id"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_game_history_looser" />
+        <addForeignKeyConstraint
+                baseTableName="game_history"
+                baseColumnNames="player1"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_game_history_winner" />
+        <addForeignKeyConstraint
+                baseTableName="game_history"
+                baseColumnNames="player2"
+                referencedTableName="users"
+                referencedColumnNames="id"
+                constraintName="fk_game_history_looser" />
+    </changeSet>
+</databaseChangeLog>

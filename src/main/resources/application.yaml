@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: tictactoe
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tictactoe
+    username: postgres
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: none
+  liquiBase:
+    change-log: db/changelog/main-changelog.xml
+    enabled: false
+jwt:
+  key: ${JWT_KEY}
+  access-token-expiration: 3600000
+  refresh-token-expiration: 86400000
