@@ -1,6 +1,6 @@
 package com.test.tictactoe.controller.auth.response
 
-class RegisterResponse (
+data class RegisterResponse (
     val id: Long,
     val login: String,
 )

@@ -31,6 +31,33 @@
 		<kotlin.version>1.9.25</kotlin.version>
 	</properties>
 	<dependencies>
+		<!-- JUnit 5 -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>5.10.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-engine</artifactId>
+			<version>5.10.3</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.mockk/mockk-jvm -->
+		<dependency>
+			<groupId>io.mockk</groupId>
+			<artifactId>mockk-jvm</artifactId>
+			<version>1.13.13</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Kotlinx Coroutines Test -->
+		<dependency>
+			<groupId>org.jetbrains.kotlinx</groupId>
+			<artifactId>kotlinx-coroutines-test</artifactId>
+			<version>1.8.1</version>
+			<scope>test</scope>
+		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.jetbrains.kotlinx/kotlinx-coroutines-reactor -->
 		<dependency>
 			<groupId>org.jetbrains.kotlinx</groupId>
