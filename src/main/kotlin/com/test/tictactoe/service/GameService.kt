@@ -11,6 +11,8 @@ import com.test.tictactoe.repository.FieldRepository
 import com.test.tictactoe.repository.GameHistoryRepository
 import com.test.tictactoe.repository.GameRepository
 import com.test.tictactoe.repository.UserRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -18,110 +20,106 @@ import org.springframework.transaction.annotation.Transactional
 class GameService (
     private val gameRepository: GameRepository,
     private val userRepository: UserRepository,
-    private val fieldRepository: FieldRepository,
     private val gameHistoryRepository: GameHistoryRepository
 ) {
-    fun getGameState(
+    suspend fun getGameState(
         playerLogin: String
-    ): Game? {
-        val player = userRepository.findByLogin(playerLogin)!!
+    ): Game? = withContext(Dispatchers.IO) {
+        val player = userRepository.findByLogin(playerLogin)
 
-        if(!player.isInGame)
-            return null
-
-        return player.currentGame!!
+        player?.currentGame
     }
 
-    @Transactional
-    fun createGame(
+    suspend fun createGame(
         ownerLogin: String,
         request: GameCreateRequest
-    ): Game? {
-        val owner = userRepository.findByLogin(ownerLogin)!!
+    ): Game? = withContext(Dispatchers.IO) {
+        val owner = userRepository.findByLogin(ownerLogin)
+        owner?.let {
+            with(request) {
+                val maxSize = maxOf(width, height)
+                if (needToWin !in 3..maxSize) {
+                    return@withContext null
+                }
+                if (ownerSymbol == memberSymbol) {
+                    return@withContext null
+                }
 
-        if (owner.isInGame)
-            return null
+                val field = Field(
+                    width = width,
+                    height = height,
+                )
 
-        with(request) {
-            val maxSize = maxOf(width, height)
-            if (needToWin !in 3..maxSize) {
-                return null
+                val game = Game(
+                    owner = owner,
+                    ownerSymbol = ownerSymbol,
+                    memberSymbol = memberSymbol,
+                    field = field,
+                    needToWin = needToWin
+                )
+
+                owner.currentGame = game
+                userRepository.save(owner)
+
+                return@withContext game;
             }
-            if (ownerSymbol == memberSymbol) {
-                return null
-            }
-
-            val field = Field(
-                width = width,
-                height = height,
-            )
-
-            val game = Game(
-                owner = owner,
-                ownerSymbol = ownerSymbol,
-                memberSymbol = memberSymbol,
-                field = field,
-                needToWin = needToWin
-            )
-
-            owner.currentGame = game
-
-            return game;
         }
     }
 
-    @Transactional
-    fun joinGame(
+    suspend fun joinGame(
         gameId: Long,
         memberLogin: String
-    ): Boolean {
-        val game = gameRepository.findById(gameId).orElse(null) ?: return false
-        val member = userRepository.findByLogin(memberLogin) ?: return false
+    ): Boolean = withContext(Dispatchers.IO) {
+        val game = gameRepository.findById(gameId).orElse(null) ?: return@withContext false
+        val member = userRepository.findByLogin(memberLogin) ?: return@withContext false
 
         if (game.member != null || member.isInGame)
-            return false
+            return@withContext false
 
         game.member = member
         member.currentGame = game
 
-        return true
+        userRepository.save(member)
+        gameRepository.save(game)
+
+        return@withContext true
     }
 
-    @Transactional
-    fun leaveGame(
+    suspend fun leaveGame(
         playerLogin: String
-    ): Boolean {
-        val player = userRepository.findByLogin(playerLogin) ?: return false
-
-        if (!player.isInGame)
-            return false
-
-        val game = player.currentGame!!
+    ): Boolean = withContext(Dispatchers.IO) {
+        val player = userRepository.findByLogin(playerLogin) ?: return@withContext false
+        val game = player.currentGame ?: return@withContext false
 
         if(game.status == GameStatus.IN_PROGRESS || player == game.owner) {
             deleteGame(game)
         } else {
             player.currentGame = null
             game.member = null
+
+            userRepository.save(player)
+            gameRepository.save(game)
         }
 
-        return true
+        return@withContext true
     }
 
-    @Transactional
-    fun startGame(
-        ownerLogin: String
-    ): Boolean {
-        val owner = userRepository.findByLogin(ownerLogin) ?: return false
+    suspend fun startGame(
+        playerLogin: String
+    ): Boolean = withContext(Dispatchers.IO) {
+        val player = userRepository.findByLogin(playerLogin) ?: return@withContext false
+        val playerGame = player.currentGame ?: return@withContext false
 
-        if (!owner.isInGame || owner.currentGame!!.owner != owner
-            || owner.currentGame!!.status == GameStatus.IN_PROGRESS || owner.currentGame!!.member == null
+        if (!player.isInGame || playerGame.owner != player
+            || playerGame.status == GameStatus.IN_PROGRESS || playerGame.member == null
         ) {
-            return false
+            return@withContext false
         }
 
-        owner.currentGame!!.status = GameStatus.IN_PROGRESS
-        return true
+        playerGame.status = GameStatus.IN_PROGRESS
+        gameRepository.save(playerGame)
+
+        return@withContext true
     }
 
     @Transactional
@@ -131,7 +129,6 @@ class GameService (
         y: Int
     ): GameStatus? {
         val player = userRepository.findByLogin(playerLogin) ?: return null
-
         val game = player.currentGame ?: return null
 
         if (game.status != GameStatus.IN_PROGRESS || !isPositionValid(game, x, y)
@@ -154,30 +151,36 @@ class GameService (
         // Win
         if (isWin) {
             // Update rating and add to history
+            // Owner win
             if(game.currentMove == game.ownerSymbol) {
-                updateRating(game.owner, game.member!!)
-                // Add to game history
-                val gameRecord = GameRecord(
-                    player1 = game.owner,
-                    player2 = game.member!!,
-                    winner = game.owner,
-                    looser = game.member,
-                    isDraw = false
-                )
+                game.member?.let { member ->
+                    updateRating(game.owner, member)
+                    // Add to game history
+                    val gameRecord = GameRecord(
+                        player1 = game.owner,
+                        player2 = member,
+                        winner = game.owner,
+                        looser = member,
+                        isDraw = false
+                    )
 
-                gameHistoryRepository.save(gameRecord)
+                    gameHistoryRepository.save(gameRecord)
+                }
+            // Member win
             } else {
-                updateRating(game.member!!, game.owner)
-                // Add to game history
-                val gameRecord = GameRecord(
-                    player1 = game.owner,
-                    player2 = game.member!!,
-                    winner = game.member,
-                    looser = game.owner,
-                    isDraw = false
-                )
+                game.member?.let { member ->
+                    updateRating(member, game.owner)
+                    // Add to game history
+                    val gameRecord = GameRecord(
+                        player1 = game.owner,
+                        player2 = member,
+                        winner = member,
+                        looser = game.owner,
+                        isDraw = false
+                    )
 
-                gameHistoryRepository.save(gameRecord)
+                    gameHistoryRepository.save(gameRecord)
+                }
             }
 
             val answerStatus = if(game.currentMove == GameSymbol.CROSS) {
@@ -194,25 +197,27 @@ class GameService (
 
         // Draw
         if(isDraw(game)) {
-            updateRating(game.owner, game.member!!, true)
+            game.member?.let { member ->
+                updateRating(game.owner, member, true)
 
-            // Add to game history
-            val gameRecord = GameRecord(
-                player1 = game.owner,
-                player2 = game.member!!,
-                winner = null,
-                looser = null,
-                isDraw = true
-            )
+                // Add to game history
+                val gameRecord = GameRecord(
+                    player1 = game.owner,
+                    player2 = member,
+                    winner = null,
+                    looser = null,
+                    isDraw = true
+                )
 
-            gameHistoryRepository.save(gameRecord)
+                gameHistoryRepository.save(gameRecord)
 
-            val answerStatus = GameStatus.DRAW
+                val answerStatus = GameStatus.DRAW
 
-            game.status = answerStatus
-            gameRepository.save(game)
+                game.status = answerStatus
+                gameRepository.save(game)
 
-            return answerStatus
+                return answerStatus
+            }
         }
 
         // Move does not affect game status
@@ -221,9 +226,10 @@ class GameService (
     }
 
     private fun deleteGame(game: Game) {
-        if(game.member != null) {
-            game.member!!.currentGame = null
-            userRepository.save(game.member!!)
+        val member = game.member
+        if(member != null) {
+            member.currentGame = null
+            userRepository.save(member)
         }
         game.owner.currentGame = null
         userRepository.save(game.owner)

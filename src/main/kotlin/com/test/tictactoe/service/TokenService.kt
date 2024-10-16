@@ -33,11 +33,11 @@ class TokenService(
             .compact()
 
     fun extractLogin(token: String): String? {
-        try {
-            return getAllClaims(token)
+        return try {
+            getAllClaims(token)
                 .subject
         } catch (e: Exception) {
-            return null
+            null
         }
     }
 

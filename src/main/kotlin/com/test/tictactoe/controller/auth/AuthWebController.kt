@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/auth")
 class AuthWebController {
     @GetMapping("/register")
-    fun showRegistrationForm(): String {
+    suspend fun showRegistrationForm(): String {
         return "register"
     }
 
     @GetMapping("/login")
-    fun showAuthenticationForm(): String {
+    suspend fun showAuthenticationForm(): String {
         return "login"
     }
 }

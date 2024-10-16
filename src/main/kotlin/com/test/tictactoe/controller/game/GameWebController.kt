@@ -1,7 +1,5 @@
 package com.test.tictactoe.controller.game
 
-import com.test.tictactoe.controller.game.request.GameCreateRequest
-import com.test.tictactoe.controller.game.response.*
 import com.test.tictactoe.service.GameService
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
@@ -12,7 +10,7 @@ class GameWebController (
     private val gameService: GameService,
 ) {
     @GetMapping("/game")
-    fun gamePage(
+    suspend fun gamePage(
         @RequestParam id: Long,
         model: Model
     ): String {
@@ -22,7 +20,7 @@ class GameWebController (
     }
 
     @GetMapping("/game/create")
-    fun gameCreate() : String {
+    suspend fun gameCreate() : String {
         return "game-create"
     }
 }

@@ -7,18 +7,18 @@ import org.springframework.web.bind.annotation.*
 class HomeWebController (
 ) {
     @GetMapping("/")
-    fun startPage(
+    suspend fun startPage(
     ): String{
         return "start-page"
     }
 
     @GetMapping("/home")
-    fun home(): String{
+    suspend fun home(): String{
         return "home"
     }
 
     @GetMapping("/history")
-    fun gameHistory(): String{
+    suspend fun gameHistory(): String{
         return "game-history"
     }
 

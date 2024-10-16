@@ -4,6 +4,8 @@ import com.test.tictactoe.model.GameRecord
 import com.test.tictactoe.model.User
 import com.test.tictactoe.repository.GameHistoryRepository
 import com.test.tictactoe.repository.UserRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
@@ -13,20 +15,24 @@ class UserService(
     private val encoder: PasswordEncoder,
     private val gameHistoryRepository: GameHistoryRepository
 ) {
-    fun createUser(user: User): User? {
-        return if (!userRepository.existsByLogin(user.login))
+    suspend fun createUser(user: User): User? = withContext(Dispatchers.IO) {
+        if (!userRepository.existsByLogin(user.login))
             userRepository.save(user.copy(password = encoder.encode(user.password)))
         else
             null
     }
 
-    fun getGameHistory(login: String) : List<GameRecord>? {
-        val user = userRepository.findByLogin(login) ?: return null
-
-        return gameHistoryRepository.getUserGameHistory(user)
+    suspend fun getGameHistory(login: String) : List<GameRecord>? = withContext(Dispatchers.IO) {
+        val user = userRepository.findByLogin(login)
+        if(user != null) {
+            gameHistoryRepository.getUserGameHistory(user)
+        }
+        else{
+            null
+        }
     }
 
-    fun getUserInfo(login: String) : User? {
-        return userRepository.findByLogin(login)
+    suspend fun getUserInfo(login: String) : User? = withContext(Dispatchers.IO) {
+        userRepository.findByLogin(login)
     }
 }
