@@ -22,4 +22,8 @@ class HomeWebController (
         return "game-history"
     }
 
+    @GetMapping("/leaderboard")
+    suspend fun leaderboard(): String{
+        return "leaderboard"
+    }
 }

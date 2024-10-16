@@ -35,4 +35,17 @@ class UserService(
     suspend fun getUserInfo(login: String) : User? = withContext(Dispatchers.IO) {
         userRepository.findByLogin(login)
     }
+
+    suspend fun getLeaderBoard() : List<Pair<String, Int>> = withContext(Dispatchers.IO) {
+        userRepository.findAllByOrderByRatingDesc().map { user ->
+            Pair(user.login, user.rating)
+        }
+    }
+
+    suspend fun getPlayerRatingPlace(login: String) : Int? = withContext(Dispatchers.IO) {
+        val leaderBoard = getLeaderBoard()
+
+        // Get player place in leader board
+        leaderBoard.indexOfFirst { it.first == login }.takeIf { it >= 0 }?.plus(1)
+    }
 }

@@ -104,6 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/history';
     });
 
+    document.getElementById('leaderboard').addEventListener('click', () => {
+            window.location.href = '/leaderboard';
+        });
+
     document.getElementById('logout').addEventListener('click', () => {
         localStorage.removeItem('accessToken');
         window.location.href = '/auth/login';

@@ -11,3 +11,7 @@ fun throwCannotGetGameHistoryException() : Nothing {
 fun throwCannotGetUserInfoException() : Nothing {
     throwBadRequest("Cannot get user info.")
 }
+
+fun throwCannotGetUserRatingPlaceException() : Nothing {
+    throwBadRequest("Cannot get user rating place.")
+}

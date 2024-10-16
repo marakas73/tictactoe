@@ -1,9 +1,11 @@
 package com.test.tictactoe.controller.user
 
 import com.test.tictactoe.controller.user.dto.GameRecordDTO
+import com.test.tictactoe.controller.user.response.LeaderBoardResponse
 import com.test.tictactoe.controller.user.response.UserInfoResponse
 import com.test.tictactoe.exception.throwCannotGetGameHistoryException
 import com.test.tictactoe.exception.throwCannotGetUserInfoException
+import com.test.tictactoe.exception.throwCannotGetUserRatingPlaceException
 import com.test.tictactoe.exception.throwForbidden
 import com.test.tictactoe.service.TokenService
 import com.test.tictactoe.service.UserService
@@ -48,5 +50,21 @@ class UserHttpController(
         )
             ?.toUserInfoResponse()
             ?: throwCannotGetUserInfoException()
+    }
+
+    @GetMapping("/leaderboard")
+    suspend fun getLeaderBoard(
+        @RequestHeader("Authorization") authHeader: String
+    ): LeaderBoardResponse {
+        val token = authHeader.substringAfter("Bearer ")
+        val login = tokenService.extractLogin(token)?: throwForbidden()
+
+        val leaderBoard = userService.getLeaderBoard()
+        val playerPlace = userService.getPlayerRatingPlace(login) ?: throwCannotGetUserRatingPlaceException()
+
+        return LeaderBoardResponse(
+            playerPlace = playerPlace,
+            leaderBoard = leaderBoard,
+        )
     }
 }
