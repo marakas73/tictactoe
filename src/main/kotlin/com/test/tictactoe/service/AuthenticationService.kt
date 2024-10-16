@@ -4,6 +4,8 @@ import com.test.tictactoe.config.JwtProperties
 import com.test.tictactoe.controller.auth.request.AuthenticationRequest
 import com.test.tictactoe.controller.auth.response.AuthenticationResponse
 import com.test.tictactoe.repository.RefreshTokenRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.userdetails.UserDetails
@@ -19,7 +21,9 @@ class AuthenticationService(
     private val jwtProperties: JwtProperties,
     private val refreshTokenRepository: RefreshTokenRepository
 ) {
-    fun authentication(authRequest: AuthenticationRequest): AuthenticationResponse {
+    suspend fun authentication(
+        authRequest: AuthenticationRequest
+    ): AuthenticationResponse = withContext(Dispatchers.IO) {
         authManager.authenticate(
             UsernamePasswordAuthenticationToken(
                 authRequest.login,
@@ -34,16 +38,18 @@ class AuthenticationService(
 
         refreshTokenRepository.save(refreshToken, user)
 
-        return AuthenticationResponse(
+        AuthenticationResponse(
             accessToken = accessToken,
             refreshToken = refreshToken
         )
     }
 
-    fun refreshAccessToken(token: String): String?{
+    suspend fun refreshAccessToken(
+        token: String
+    ): String? = withContext(Dispatchers.IO){
         val extractedLogin = tokenService.extractLogin(token)
 
-        return extractedLogin?.let { login ->
+         extractedLogin?.let { login ->
             val  currentUserDetails = userDetailsService.loadUserByUsername(login)
             val refreshTokenUserDetails = refreshTokenRepository.findUserDetailsByToken(token)
 

@@ -11,6 +11,8 @@ import com.test.tictactoe.repository.FieldRepository
 import com.test.tictactoe.repository.GameHistoryRepository
 import com.test.tictactoe.repository.GameRepository
 import com.test.tictactoe.repository.UserRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -18,37 +20,36 @@ import org.springframework.transaction.annotation.Transactional
 class GameService (
     private val gameRepository: GameRepository,
     private val userRepository: UserRepository,
-    private val fieldRepository: FieldRepository,
     private val gameHistoryRepository: GameHistoryRepository
 ) {
-    fun getGameState(
+    suspend fun getGameState(
         playerLogin: String
-    ): Game? {
+    ): Game? = withContext(Dispatchers.IO) {
         val player = userRepository.findByLogin(playerLogin)!!
 
-        if(!player.isInGame)
-            return null
-
-        return player.currentGame!!
+        if (!player.isInGame) {
+            null
+        } else {
+            player.currentGame!!
+        }
     }
 
-    @Transactional
-    fun createGame(
+    suspend fun createGame(
         ownerLogin: String,
         request: GameCreateRequest
-    ): Game? {
+    ): Game? = withContext(Dispatchers.IO) {
         val owner = userRepository.findByLogin(ownerLogin)!!
 
         if (owner.isInGame)
-            return null
+            return@withContext null
 
         with(request) {
             val maxSize = maxOf(width, height)
             if (needToWin !in 3..maxSize) {
-                return null
+                return@withContext null
             }
             if (ownerSymbol == memberSymbol) {
-                return null
+                return@withContext null
             }
 
             val field = Field(
@@ -65,36 +66,38 @@ class GameService (
             )
 
             owner.currentGame = game
+            userRepository.save(owner)
 
-            return game;
+            return@withContext game;
         }
     }
 
-    @Transactional
-    fun joinGame(
+    suspend fun joinGame(
         gameId: Long,
         memberLogin: String
-    ): Boolean {
-        val game = gameRepository.findById(gameId).orElse(null) ?: return false
-        val member = userRepository.findByLogin(memberLogin) ?: return false
+    ): Boolean = withContext(Dispatchers.IO) {
+        val game = gameRepository.findById(gameId).orElse(null) ?: return@withContext false
+        val member = userRepository.findByLogin(memberLogin) ?: return@withContext false
 
         if (game.member != null || member.isInGame)
-            return false
+            return@withContext false
 
         game.member = member
         member.currentGame = game
 
-        return true
+        userRepository.save(member)
+        gameRepository.save(game)
+
+        return@withContext true
     }
 
-    @Transactional
-    fun leaveGame(
+    suspend fun leaveGame(
         playerLogin: String
-    ): Boolean {
-        val player = userRepository.findByLogin(playerLogin) ?: return false
+    ): Boolean = withContext(Dispatchers.IO) {
+        val player = userRepository.findByLogin(playerLogin) ?: return@withContext false
 
         if (!player.isInGame)
-            return false
+            return@withContext false
 
         val game = player.currentGame!!
 
@@ -103,25 +106,30 @@ class GameService (
         } else {
             player.currentGame = null
             game.member = null
+
+            userRepository.save(player)
+            gameRepository.save(game)
         }
 
-        return true
+        return@withContext true
     }
 
-    @Transactional
-    fun startGame(
-        ownerLogin: String
-    ): Boolean {
-        val owner = userRepository.findByLogin(ownerLogin) ?: return false
+    suspend fun startGame(
+        playerLogin: String
+    ): Boolean = withContext(Dispatchers.IO) {
+        val player = userRepository.findByLogin(playerLogin) ?: return@withContext false
+        val playerGame = player.currentGame ?: return@withContext false
 
-        if (!owner.isInGame || owner.currentGame!!.owner != owner
-            || owner.currentGame!!.status == GameStatus.IN_PROGRESS || owner.currentGame!!.member == null
+        if (!player.isInGame || playerGame.owner != player
+            || playerGame.status == GameStatus.IN_PROGRESS || playerGame.member == null
         ) {
-            return false
+            return@withContext false
         }
 
-        owner.currentGame!!.status = GameStatus.IN_PROGRESS
-        return true
+        playerGame.status = GameStatus.IN_PROGRESS
+        gameRepository.save(playerGame)
+
+        return@withContext true
     }
 
     @Transactional

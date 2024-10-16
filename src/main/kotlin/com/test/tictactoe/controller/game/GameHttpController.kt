@@ -4,11 +4,9 @@ import com.test.tictactoe.controller.game.request.GameCreateRequest
 import com.test.tictactoe.controller.game.request.GameMoveRequest
 import com.test.tictactoe.controller.game.response.*
 import com.test.tictactoe.enum.GameStatus
-import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.service.GameService
 import com.test.tictactoe.service.TokenService
-import org.springframework.http.HttpEntity
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -22,7 +20,7 @@ class GameHttpController (
 ) {
 
     @GetMapping("/state")
-    fun getGameState(
+    suspend fun getGameState(
         @RequestHeader("Authorization") authHeader: String
     ): GameStateResponse {
         val token = authHeader.substringAfter("Bearer ")
@@ -36,7 +34,7 @@ class GameHttpController (
     }
 
     @PostMapping("/create")
-    fun gameCreate(
+    suspend fun gameCreate(
         @RequestBody request: GameCreateRequest,
         @RequestHeader("Authorization") authHeader: String
         ) : GameCreateResponse {
@@ -52,7 +50,7 @@ class GameHttpController (
     }
 
     @PostMapping("/move")
-    fun move(
+    suspend fun move(
         @RequestBody request: GameMoveRequest,
         @RequestHeader("Authorization") authHeader: String
     ): GameStatus {
@@ -68,7 +66,7 @@ class GameHttpController (
     }
 
     @GetMapping("/join")
-    fun gameJoin(
+    suspend fun gameJoin(
         @RequestParam id: Long,
         @RequestHeader("Authorization") authHeader: String
     ): ResponseEntity<Unit> {
@@ -85,7 +83,7 @@ class GameHttpController (
     }
 
     @GetMapping("/leave")
-    fun gameLeave(
+    suspend fun gameLeave(
         @RequestHeader("Authorization") authHeader: String
     ): ResponseEntity<Unit> {
         val token = authHeader.substringAfter("Bearer ")
@@ -100,12 +98,12 @@ class GameHttpController (
     }
 
     @GetMapping("/start")
-    fun startGame(@RequestHeader("Authorization") authHeader: String): ResponseEntity<Unit> {
+    suspend fun startGame(@RequestHeader("Authorization") authHeader: String): ResponseEntity<Unit> {
         val token = authHeader.substringAfter("Bearer ")
         val login = tokenService.extractLogin(token)!!
 
         return if(gameService.startGame(
-                ownerLogin = login
+                playerLogin = login
             ))
             ResponseEntity(HttpStatus.OK)
         else

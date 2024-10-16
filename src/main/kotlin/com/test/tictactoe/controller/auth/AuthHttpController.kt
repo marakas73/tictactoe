@@ -23,7 +23,7 @@ class AuthHttpController(
     private val userService: UserService
 ) {
     @PostMapping("/register")
-    fun register(@RequestBody userRequest: RegisterRequest): RegisterResponse =
+    suspend fun register(@RequestBody userRequest: RegisterRequest): RegisterResponse =
         userService.createUser(
             userRequest.toModel()
         )
@@ -42,13 +42,13 @@ class AuthHttpController(
             login = this.login
         )
     @PostMapping("/login")
-    fun authenticate(
+    suspend fun authenticate(
         @RequestBody authRequest: AuthenticationRequest
     ): AuthenticationResponse {
         return authenticationService.authentication(authRequest)
     }
     @PostMapping("/refresh")
-    fun refreshAccessToken(
+    suspend fun refreshAccessToken(
         @RequestBody request: RefreshTokenRequest
     ): TokenResponse =
         authenticationService.refreshAccessToken(request.token)

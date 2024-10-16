@@ -1,9 +1,7 @@
 package com.test.tictactoe.controller.user
 
-import com.test.tictactoe.controller.game.response.GameCreateResponse
 import com.test.tictactoe.controller.user.dto.GameRecordDTO
 import com.test.tictactoe.controller.user.response.UserInfoResponse
-import com.test.tictactoe.model.Game
 import com.test.tictactoe.model.GameRecord
 import com.test.tictactoe.model.User
 import com.test.tictactoe.service.TokenService
@@ -22,7 +20,7 @@ class UserHttpController(
     private val userService: UserService
 ) {
     @GetMapping("/history")
-    fun getGameHistory(
+    suspend fun getGameHistory(
         @RequestHeader("Authorization") authHeader: String
     ): List<GameRecordDTO> {
         val token = authHeader.substringAfter("Bearer ")
@@ -38,7 +36,7 @@ class UserHttpController(
     }
 
     @GetMapping("/info")
-    fun getUserInfo(
+    suspend fun getUserInfo(
         @RequestHeader("Authorization") authHeader: String
     ): UserInfoResponse {
         val token = authHeader.substringAfter("Bearer ")
