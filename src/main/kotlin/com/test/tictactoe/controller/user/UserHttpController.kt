@@ -24,7 +24,7 @@ class UserHttpController(
         @RequestHeader("Authorization") authHeader: String
     ): List<GameRecordDTO> {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token)!!
+        val login = tokenService.extractLogin(token)?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
 
         return userService.getGameHistory(
             login = login
@@ -40,7 +40,7 @@ class UserHttpController(
         @RequestHeader("Authorization") authHeader: String
     ): UserInfoResponse {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token)!!
+        val login = tokenService.extractLogin(token)?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
 
         return userService.getUserInfo(
             login = login
