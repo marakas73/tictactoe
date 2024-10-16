@@ -22,7 +22,7 @@ data class Field(
     @Max(100)
     val height: Int,
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "field_cells", joinColumns = [JoinColumn(name = "field_id")])
     @Column(name = "symbol")
     val field: List<MutableList<GameSymbol?>> = List(height) { MutableList(width) { null } }
