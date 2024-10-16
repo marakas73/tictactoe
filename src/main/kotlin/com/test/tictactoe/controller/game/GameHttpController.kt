@@ -4,9 +4,10 @@ import com.test.tictactoe.controller.game.request.GameCreateRequest
 import com.test.tictactoe.controller.game.request.GameMoveRequest
 import com.test.tictactoe.controller.game.response.*
 import com.test.tictactoe.enum.GameStatus
-import com.test.tictactoe.model.Game
 import com.test.tictactoe.service.GameService
 import com.test.tictactoe.service.TokenService
+import com.test.tictactoe.utils.toCreateResponse
+import com.test.tictactoe.utils.toGameStateResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -108,27 +109,5 @@ class GameHttpController (
             ResponseEntity(HttpStatus.OK)
         else
             ResponseEntity(HttpStatus.BAD_REQUEST)
-    }
-
-    private fun Game.toCreateResponse(): GameCreateResponse =
-        GameCreateResponse(
-            id = this.id,
-            width = this.field.width,
-            height = this.field.height,
-            needToWin = this.needToWin,
-            ownerSymbol = this.ownerSymbol,
-            memberSymbol = this.memberSymbol,
-        )
-
-    private fun Game.toGameStateResponse(): GameStateResponse {
-        return GameStateResponse(
-            field = this.field.field,
-            currentMove = this.currentMove,
-            gameStatus = this.status,
-            ownerId = this.owner.id,
-            memberId = this.member?.id,
-            ownerSymbol = this.ownerSymbol,
-            memberSymbol = this.memberSymbol,
-        )
     }
 }

@@ -2,10 +2,10 @@ package com.test.tictactoe.controller.user
 
 import com.test.tictactoe.controller.user.dto.GameRecordDTO
 import com.test.tictactoe.controller.user.response.UserInfoResponse
-import com.test.tictactoe.model.GameRecord
-import com.test.tictactoe.model.User
 import com.test.tictactoe.service.TokenService
 import com.test.tictactoe.service.UserService
+import com.test.tictactoe.utils.toGameRecordDTO
+import com.test.tictactoe.utils.toUserInfoResponse
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader
@@ -48,22 +48,4 @@ class UserHttpController(
             ?.toUserInfoResponse()
             ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot get user info.")
     }
-
-    private fun GameRecord.toGameRecordDTO(): GameRecordDTO =
-        GameRecordDTO(
-            id = id,
-            player1Login = player1.login,
-            player2Login = player2.login,
-            winnerLogin = winner?.login,
-            looserLogin = looser?.login,
-            isDraw = isDraw
-        )
-
-    private fun User.toUserInfoResponse(): UserInfoResponse =
-        UserInfoResponse(
-            id = this.id,
-            login = this.login,
-            rating = this.rating,
-            currentGameId = this.currentGame?.id,
-        )
 }
