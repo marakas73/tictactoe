@@ -4,6 +4,10 @@ import com.test.tictactoe.controller.game.request.GameCreateRequest
 import com.test.tictactoe.controller.game.request.GameMoveRequest
 import com.test.tictactoe.controller.game.response.*
 import com.test.tictactoe.enum.GameStatus
+import com.test.tictactoe.exception.throwCannotCreateGameException
+import com.test.tictactoe.exception.throwCannotExecuteMoveException
+import com.test.tictactoe.exception.throwCannotGetGameState
+import com.test.tictactoe.exception.throwForbidden
 import com.test.tictactoe.service.GameService
 import com.test.tictactoe.service.TokenService
 import com.test.tictactoe.utils.toCreateResponse
@@ -11,7 +15,6 @@ import com.test.tictactoe.utils.toGameStateResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("api/game")
@@ -25,13 +28,13 @@ class GameHttpController (
         @RequestHeader("Authorization") authHeader: String
     ): GameStateResponse {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token) ?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token) ?: throwForbidden()
 
         return gameService.getGameState(
             playerLogin = login
         )
             ?.toGameStateResponse()
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot get game state.")
+            ?: throwCannotGetGameState()
     }
 
     @PostMapping("/create")
@@ -40,14 +43,14 @@ class GameHttpController (
         @RequestHeader("Authorization") authHeader: String
         ) : GameCreateResponse {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token) ?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token) ?: throwForbidden()
 
         return gameService.createGame(
             ownerLogin = login,
             request = request
         )
             ?.toCreateResponse()
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot create a game.")
+            ?: throwCannotCreateGameException()
     }
 
     @PostMapping("/move")
@@ -56,14 +59,14 @@ class GameHttpController (
         @RequestHeader("Authorization") authHeader: String
     ): GameStatus {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token) ?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token) ?: throwForbidden()
 
         return gameService.makeMove(
             playerLogin = login,
             x = request.x,
             y = request.y,
         )
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Something wrong.")
+            ?: throwCannotExecuteMoveException()
     }
 
     @GetMapping("/join")
@@ -72,7 +75,7 @@ class GameHttpController (
         @RequestHeader("Authorization") authHeader: String
     ): ResponseEntity<Unit> {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token) ?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token) ?: throwForbidden()
 
         return if(gameService.joinGame(
             gameId = id,
@@ -88,7 +91,7 @@ class GameHttpController (
         @RequestHeader("Authorization") authHeader: String
     ): ResponseEntity<Unit> {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token) ?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token) ?: throwForbidden()
 
         return if(gameService.leaveGame(
                 playerLogin = login
@@ -101,7 +104,7 @@ class GameHttpController (
     @GetMapping("/start")
     suspend fun startGame(@RequestHeader("Authorization") authHeader: String): ResponseEntity<Unit> {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token) ?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token) ?: throwForbidden()
 
         return if(gameService.startGame(
                 playerLogin = login

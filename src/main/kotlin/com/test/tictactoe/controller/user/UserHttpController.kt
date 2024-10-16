@@ -2,16 +2,16 @@ package com.test.tictactoe.controller.user
 
 import com.test.tictactoe.controller.user.dto.GameRecordDTO
 import com.test.tictactoe.controller.user.response.UserInfoResponse
+import com.test.tictactoe.exception.throwCannotGetGameHistoryException
+import com.test.tictactoe.exception.throwCannotGetUserInfoException
 import com.test.tictactoe.service.TokenService
 import com.test.tictactoe.service.UserService
 import com.test.tictactoe.utils.toGameRecordDTO
 import com.test.tictactoe.utils.toUserInfoResponse
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/api/user")
@@ -32,7 +32,7 @@ class UserHttpController(
             ?.map{
                 it.toGameRecordDTO()
             }
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot get game history.")
+            ?: throwCannotGetGameHistoryException()
     }
 
     @GetMapping("/info")
@@ -46,6 +46,6 @@ class UserHttpController(
             login = login
         )
             ?.toUserInfoResponse()
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot get user info.")
+            ?: throwCannotGetUserInfoException()
     }
 }

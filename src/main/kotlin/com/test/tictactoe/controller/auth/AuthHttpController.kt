@@ -6,17 +6,17 @@ import com.test.tictactoe.controller.auth.request.RegisterRequest
 import com.test.tictactoe.controller.auth.response.AuthenticationResponse
 import com.test.tictactoe.controller.auth.response.RegisterResponse
 import com.test.tictactoe.controller.auth.response.TokenResponse
+import com.test.tictactoe.exception.throwCannotCreateUserException
+import com.test.tictactoe.exception.throwInvalidRefreshTokenException
 import com.test.tictactoe.service.AuthenticationService
 import com.test.tictactoe.service.UserService
 import com.test.tictactoe.utils.mapToTokenResponse
 import com.test.tictactoe.utils.toModel
 import com.test.tictactoe.utils.toResponse
-import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,7 +30,7 @@ class AuthHttpController(
             userRequest.toModel()
         )
             ?.toResponse()
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot create a user.")
+            ?: throwCannotCreateUserException()
 
     @PostMapping("/login")
     suspend fun authenticate(
@@ -45,5 +45,5 @@ class AuthHttpController(
     ): TokenResponse =
         authenticationService.refreshAccessToken(request.token)
             ?.mapToTokenResponse()
-            ?: throw ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid refresh token")
+            ?: throwInvalidRefreshTokenException()
 }
