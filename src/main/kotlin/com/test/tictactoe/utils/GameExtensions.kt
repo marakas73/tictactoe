@@ -19,8 +19,8 @@ fun Game.toGameStateResponse(): GameStateResponse {
         field = this.field.field,
         currentMove = this.currentMove,
         gameStatus = this.status,
-        ownerId = this.owner.id,
-        memberId = this.member?.id,
+        ownerLogin = this.owner.login,
+        memberLogin = this.member?.login,
         ownerSymbol = this.ownerSymbol,
         memberSymbol = this.memberSymbol,
     )
