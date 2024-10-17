@@ -3,6 +3,7 @@ package com.test.tictactoe.service
 import com.test.tictactoe.controller.game.request.GameCreateRequest
 import com.test.tictactoe.enum.GameStatus
 import com.test.tictactoe.enum.GameSymbol
+import com.test.tictactoe.exception.throwCannotExecuteMoveException
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.model.GameRecord
@@ -130,109 +131,56 @@ class GameService (
         val player = userRepository.findByLogin(playerLogin) ?: return null
         val game = player.currentGame ?: return null
 
-        if (game.status != GameStatus.IN_PROGRESS || !isPositionValid(game, x, y)
-            || game.field.field[y][x] != null
-            || (player != game.owner && game.ownerSymbol == game.currentMove)
-            || (player != game.member && game.memberSymbol == game.currentMove)
-        ) {
+        if(!isMoveValid(player, game, x, y)) {
             return null
         }
 
-        game.field.field[y][x] = game.currentMove
+        doMove(game, game.currentMove, x, y)
 
-        val isWin = isWinningMove(
-            game = game,
-            previousMove = game.currentMove,
-            x = x,
-            y = y
-        )
-
-        // Win
-        if (isWin) {
-            // Update rating and add to history
-            // Owner win
-            if(game.currentMove == game.ownerSymbol) {
-                game.member?.let { member ->
-                    updateRating(game.owner, member)
-                    // Add to game history
-                    val gameRecord = GameRecord(
-                        player1 = game.owner,
-                        player2 = member,
-                        winner = game.owner,
-                        looser = member,
-                        isDraw = false
-                    )
-
-                    gameHistoryRepository.save(gameRecord)
-                }
-            // Member win
-            } else {
-                game.member?.let { member ->
-                    updateRating(member, game.owner)
-                    // Add to game history
-                    val gameRecord = GameRecord(
-                        player1 = game.owner,
-                        player2 = member,
-                        winner = member,
-                        looser = game.owner,
-                        isDraw = false
-                    )
-
-                    gameHistoryRepository.save(gameRecord)
-                }
+        val newGameStatus = when {
+            isWinningMove(game, game.currentMove, x, y) -> handleWin(game)
+            isDraw(game) -> handleDraw(game)
+            else -> {
+                changeCurrentMove(game)
+                GameStatus.IN_PROGRESS
             }
+        }
 
-            val answerStatus = if(game.currentMove == GameSymbol.CROSS) {
-                GameStatus.CROSS_WON
-            } else {
-                GameStatus.ZERO_WON
-            }
-
-            game.status = answerStatus
+        // Set new status to game and save
+        if(game.status != newGameStatus) {
+            game.status = newGameStatus ?: return null
             gameRepository.save(game)
-
-            return answerStatus
         }
 
-        // Draw
-        if(isDraw(game)) {
-            game.member?.let { member ->
-                updateRating(game.owner, member, true)
-
-                // Add to game history
-                val gameRecord = GameRecord(
-                    player1 = game.owner,
-                    player2 = member,
-                    winner = null,
-                    looser = null,
-                    isDraw = true
-                )
-
-                gameHistoryRepository.save(gameRecord)
-
-                val answerStatus = GameStatus.DRAW
-
-                game.status = answerStatus
-                gameRepository.save(game)
-
-                return answerStatus
-            }
-        }
-
-        // Move does not affect game status
-        changeCurrentMove(game)
-        return GameStatus.IN_PROGRESS
+        return newGameStatus
     }
 
-    private fun deleteGame(game: Game) {
-        val member = game.member
-        if(member != null) {
-            member.currentGame = null
-            userRepository.save(member)
-        }
-        game.owner.currentGame = null
-        userRepository.save(game.owner)
-        gameRepository.delete(game)
+    private fun handleWin(game: Game) : GameStatus? {
+        val member = game.member ?: return null
+
+        val winner = if (game.currentMove == game.ownerSymbol) game.owner else member
+        val looser = if (winner == game.owner) member else game.owner
+
+        updateRating(winner, looser)
+        saveGameRecord(game.owner, member, winner, looser, false)
+
+        return if (game.currentMove == GameSymbol.CROSS)
+            GameStatus.CROSS_WON
+        else
+            GameStatus.ZERO_WON
+    }
+
+    private fun handleDraw(game: Game) : GameStatus? {
+        val member = game.member ?: return null
+
+        updateRating(game.owner, member, true)
+        saveGameRecord(game.owner, member, null, null, true)
+
+        return GameStatus.DRAW
+    }
+
+    private fun doMove(game: Game, symbol: GameSymbol, x: Int, y: Int) {
+        game.field.field[y][x] = symbol
     }
 
     private fun updateRating(winner: User, loser: User, isDraw: Boolean = false) {
@@ -249,8 +197,28 @@ class GameService (
         safeUpdate(25, -25)
     }
 
+    private fun saveGameRecord(player1: User, player2: User, winner: User?, looser: User?, isDraw: Boolean = false) {
+        val gameRecord = GameRecord(
+            player1 = player1,
+            player2 = player2,
+            winner = winner,
+            looser = looser,
+            isDraw = isDraw,
+        )
+
+        gameHistoryRepository.save(gameRecord)
+    }
+
     private fun isPositionValid(game: Game, x: Int, y: Int): Boolean {
         return !(x < 0 || x >= game.field.width || y < 0 || y >= game.field.height)
+    }
+
+    private fun isMoveValid(player: User, game: Game, x: Int, y: Int) : Boolean {
+        return (game.status == GameStatus.IN_PROGRESS
+                && isPositionValid(game, x, y)
+                && game.field.field[y][x] == null
+                && ((player == game.owner && game.ownerSymbol == game.currentMove)
+                    || (player == game.member && game.memberSymbol == game.currentMove)))
     }
 
     private fun changeCurrentMove(game: Game) {
@@ -261,144 +229,49 @@ class GameService (
         return !game.field.field.any { innerList -> innerList.contains(null) }
     }
 
-    fun isWinningMove(game: Game, previousMove: GameSymbol, x: Int, y: Int): Boolean {
+    private fun isWinningMove(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int): Boolean {
+        return checkDirection(game, currentMoveSymbol, x, y, 1, 0)       // Right
+                || checkDirection(game, currentMoveSymbol, x, y, -1, 0)  // Left
+                || checkDirection(game, currentMoveSymbol, x, y, 0, -1)  // Up
+                || checkDirection(game, currentMoveSymbol, x, y, 0, 1)   // Down
+                || checkDirection(game, currentMoveSymbol, x, y, -1, -1) // Left-up
+                || checkDirection(game, currentMoveSymbol, x, y, 1, 1)   // Right-down
+                || checkDirection(game, currentMoveSymbol, x, y, -1, 1)  // Left-down
+                || checkDirection(game, currentMoveSymbol, x, y, 1, -1)  // Right-up
+    }
 
-        // Horizontal
+    private fun checkDirection(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int, deltaX: Int, deltaY: Int): Boolean {
         var counter = 1
-        var currentX = x
-        var currentY = y
-        // Right
-        while (currentX < game.field.width - 1) {
-            currentX++
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
+        var currentX = x + deltaX
+        var currentY = y + deltaY
+
+        while (
+            isWithinBounds(game, currentX, currentY)
+            && game.field.field[currentY][currentX] == currentMoveSymbol
+        ) {
+            counter++
+            if (counter == game.needToWin) {
+                return true
             }
+            currentX += deltaX
+            currentY += deltaY
         }
-
-        // Left
-        currentX = x
-        currentY = y
-        while (currentX > 0) {
-            currentX--
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
-            }
-        }
-
-
-        // Verticals
-        counter = 1
-        currentX = x
-        currentY = y
-        // Up
-        while (currentY > 0) {
-            currentY--
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
-            }
-        }
-
-        // Down
-        currentX = x
-        currentY = y
-        while (currentY < game.field.height - 1) {
-            currentY++
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
-            }
-        }
-
-
-        // main diagonal
-        counter = 1
-        currentX = x
-        currentY = y
-        // Up
-        while (currentY > 0 && currentX > 0) {
-            currentY--
-            currentX--
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
-            }
-        }
-
-        // Down
-        currentX = x
-        currentY = y
-        while (currentY < game.field.height - 1 && currentX < game.field.width - 1) {
-            currentY++
-            currentX++
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
-            }
-        }
-
-
-        // second diagonal
-        counter = 1
-        currentX = x
-        currentY = y
-        // Up
-        while (currentY > 0 && currentX < game.field.width - 1) {
-            currentY--
-            currentX++
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
-            }
-        }
-
-        // Down
-        currentX = x
-        currentY = y
-        while (currentY < game.field.height - 1 && currentX > 0) {
-            currentY++
-            currentX--
-            if (game.field.field[currentY][currentX] == previousMove) {
-                counter++
-                if (counter == game.needToWin) {
-                    return true
-                }
-            } else {
-                break
-            }
-        }
-
         return false
+    }
+
+    private fun isWithinBounds(game: Game, x: Int, y: Int): Boolean {
+        return x in 0 until game.field.width && y in 0 until game.field.height
+    }
+
+    private fun deleteGame(game: Game) {
+        val member = game.member
+        if(member != null) {
+            member.currentGame = null
+            userRepository.save(member)
+        }
+        game.owner.currentGame = null
+        userRepository.save(game.owner)
+        gameRepository.delete(game)
     }
 
     fun findGameById(id: Long): Game? {
