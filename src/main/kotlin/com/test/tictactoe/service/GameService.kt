@@ -7,7 +7,6 @@ import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.model.GameRecord
 import com.test.tictactoe.model.User
-import com.test.tictactoe.repository.FieldRepository
 import com.test.tictactoe.repository.GameHistoryRepository
 import com.test.tictactoe.repository.GameRepository
 import com.test.tictactoe.repository.UserRepository
@@ -61,7 +60,7 @@ class GameService (
                 owner.currentGame = game
                 val savedUser = userRepository.save(owner)
 
-                return@withContext savedUser.currentGame;
+                return@withContext savedUser.currentGame
             }
         }
     }
@@ -263,15 +262,11 @@ class GameService (
     }
 
     fun isWinningMove(game: Game, previousMove: GameSymbol, x: Int, y: Int): Boolean {
-        var counter: Int = 1
-        var currentX: Int = x
-        var currentY: Int = y
-
 
         // Horizontal
-        counter = 1
-        currentX = x
-        currentY = y
+        var counter = 1
+        var currentX = x
+        var currentY = y
         // Right
         while (currentX < game.field.width - 1) {
             currentX++
