@@ -59,9 +59,9 @@ class GameService (
                 )
 
                 owner.currentGame = game
-                userRepository.save(owner)
+                val savedOwner = userRepository.save(owner)
 
-                return@withContext game;
+                return@withContext savedOwner.currentGame;
             }
         }
     }
