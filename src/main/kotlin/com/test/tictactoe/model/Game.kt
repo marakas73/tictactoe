@@ -13,7 +13,7 @@ data class Game(
 
     @OneToOne
     @JoinColumn(name = "owner_id", referencedColumnName = "id")
-    val owner: User = User(),
+    val owner: User,
 
     @OneToOne
     @JoinColumn(name = "member_id", referencedColumnName = "id")
@@ -21,18 +21,18 @@ data class Game(
 
     @Enumerated(EnumType.STRING)
     @Column
-    val ownerSymbol: GameSymbol = GameSymbol.CROSS,
+    val ownerSymbol: GameSymbol,
 
     @Enumerated(EnumType.STRING)
     @Column
-    val memberSymbol: GameSymbol = GameSymbol.ZERO,
+    val memberSymbol: GameSymbol,
 
     @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn(name = "field_id", referencedColumnName = "id")
-    val field: Field = Field(),
+    val field: Field,
 
     @Column
-    val needToWin: Int = 3,
+    val needToWin: Int,
 
     @Enumerated(EnumType.STRING)
     @Column
@@ -41,5 +41,6 @@ data class Game(
     @Column
     var status: GameStatus = GameStatus.NOT_STARTED,
 ){
-
+    // Конструктор по умолчанию для JPA
+    constructor() : this(0, User(), null, GameSymbol.CROSS, GameSymbol.ZERO, Field(width = 3, height = 3), 3, GameSymbol.CROSS, GameStatus.NOT_STARTED)
 }

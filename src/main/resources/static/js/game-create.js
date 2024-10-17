@@ -37,7 +37,6 @@ document.getElementById('createGameForm').addEventListener('submit', async funct
         }
 
         const createResponse = await response.json();
-        console.log(createResponse)
         window.location.href = `/game?id=${createResponse.id}`;
 
     } catch (error) {

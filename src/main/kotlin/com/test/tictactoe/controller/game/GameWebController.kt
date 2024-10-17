@@ -1,7 +1,5 @@
 package com.test.tictactoe.controller.game
 
-import com.test.tictactoe.exception.throwBadRequest
-import com.test.tictactoe.exception.throwForbidden
 import com.test.tictactoe.service.GameService
 import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
