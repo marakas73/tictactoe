@@ -1,17 +1,20 @@
 package com.test.tictactoe.controller.user
 
 import com.test.tictactoe.controller.user.dto.GameRecordDTO
+import com.test.tictactoe.controller.user.response.LeaderBoardResponse
 import com.test.tictactoe.controller.user.response.UserInfoResponse
-import com.test.tictactoe.model.GameRecord
-import com.test.tictactoe.model.User
+import com.test.tictactoe.exception.throwCannotGetGameHistoryException
+import com.test.tictactoe.exception.throwCannotGetUserInfoException
+import com.test.tictactoe.exception.throwCannotGetUserRatingPlaceException
+import com.test.tictactoe.exception.throwForbidden
 import com.test.tictactoe.service.TokenService
 import com.test.tictactoe.service.UserService
-import org.springframework.http.HttpStatus
+import com.test.tictactoe.utils.toGameRecordDTO
+import com.test.tictactoe.utils.toUserInfoResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.server.ResponseStatusException
 
 @RestController
 @RequestMapping("/api/user")
@@ -24,7 +27,7 @@ class UserHttpController(
         @RequestHeader("Authorization") authHeader: String
     ): List<GameRecordDTO> {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token)?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token)?: throwForbidden()
 
         return userService.getGameHistory(
             login = login
@@ -32,7 +35,7 @@ class UserHttpController(
             ?.map{
                 it.toGameRecordDTO()
             }
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot get game history.")
+            ?: throwCannotGetGameHistoryException()
     }
 
     @GetMapping("/info")
@@ -40,30 +43,28 @@ class UserHttpController(
         @RequestHeader("Authorization") authHeader: String
     ): UserInfoResponse {
         val token = authHeader.substringAfter("Bearer ")
-        val login = tokenService.extractLogin(token)?: throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        val login = tokenService.extractLogin(token)?: throwForbidden()
 
         return userService.getUserInfo(
             login = login
         )
             ?.toUserInfoResponse()
-            ?: throw ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot get user info.")
+            ?: throwCannotGetUserInfoException()
     }
 
-    private fun GameRecord.toGameRecordDTO(): GameRecordDTO =
-        GameRecordDTO(
-            id = id,
-            player1Login = player1.login,
-            player2Login = player2.login,
-            winnerLogin = winner?.login,
-            looserLogin = looser?.login,
-            isDraw = isDraw
-        )
+    @GetMapping("/leaderboard")
+    suspend fun getLeaderBoard(
+        @RequestHeader("Authorization") authHeader: String
+    ): LeaderBoardResponse {
+        val token = authHeader.substringAfter("Bearer ")
+        val login = tokenService.extractLogin(token)?: throwForbidden()
 
-    private fun User.toUserInfoResponse(): UserInfoResponse =
-        UserInfoResponse(
-            id = this.id,
-            login = this.login,
-            rating = this.rating,
-            currentGameId = this.currentGame?.id,
+        val leaderBoard = userService.getLeaderBoard()
+        val playerPlace = userService.getPlayerRatingPlace(login) ?: throwCannotGetUserRatingPlaceException()
+
+        return LeaderBoardResponse(
+            playerPlace = playerPlace,
+            leaderBoard = leaderBoard,
         )
+    }
 }

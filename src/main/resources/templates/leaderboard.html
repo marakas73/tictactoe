@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Таблица Рейтинга</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #leaderboard {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        #leaderboard th, #leaderboard td {
+            border: 1px solid #000;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>Таблица Рейтинга</h1>
+<div id="user-info"></div>
+<table id="leaderboard">
+    <thead>
+    <tr>
+        <th>Игрок</th>
+        <th>Рейтинг</th>
+    </tr>
+    </thead>
+    <tbody id="leaderboard-body">
+    <!-- Сюда будут добавлены строки с рейтингами -->
+    </tbody>
+</table>
+
+<script src="/js/leaderboard.js"></script>
+</body>
+</html>

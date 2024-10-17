@@ -9,4 +9,6 @@ interface UserRepository : JpaRepository<User, Long> {
     fun existsByLogin(login: String): Boolean
 
     fun findByLogin(login: String): User?
+
+    fun findAllByOrderByRatingDesc(): List<User>
 }
