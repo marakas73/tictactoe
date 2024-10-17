@@ -7,5 +7,4 @@ class GameRecordDTO(
     val winnerLogin: String?,
     val looserLogin: String?,
     val isDraw: Boolean
-) {
-}
+)

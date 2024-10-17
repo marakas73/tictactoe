@@ -112,8 +112,8 @@ function initGameBoard(gameState) {
     });
 
     document.getElementById('current-turn').innerText = getSymbolByText(gameState.currentMove);
-    document.getElementById('player1').innerText = gameState.ownerId;
-    document.getElementById('player2').innerText = gameState.memberId;
+    document.getElementById('player1').innerText = gameState.ownerLogin;
+    document.getElementById('player2').innerText = gameState.memberLogin;
     document.getElementById('symbol1').innerText = getSymbolByText(gameState.ownerSymbol);
     document.getElementById('symbol2').innerText = getSymbolByText(gameState.memberSymbol);
 }
@@ -127,8 +127,8 @@ function updateGameBoard(gameState) {
     });
 
     document.getElementById('current-turn').innerText = getSymbolByText(gameState.currentMove);
-    document.getElementById('player1').innerText = gameState.ownerId;
-    document.getElementById('player2').innerText = gameState.memberId;
+    document.getElementById('player1').innerText = gameState.ownerLogin;
+    document.getElementById('player2').innerText = gameState.memberLogin;
     document.getElementById('symbol1').innerText = getSymbolByText(gameState.ownerSymbol);
     document.getElementById('symbol2').innerText = getSymbolByText(gameState.memberSymbol);
 }

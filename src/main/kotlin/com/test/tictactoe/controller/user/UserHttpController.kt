@@ -60,7 +60,7 @@ class UserHttpController(
         val login = tokenService.extractLogin(token)?: throwForbidden()
 
         val leaderBoard = userService.getLeaderBoard()
-        val playerPlace = userService.getPlayerRatingPlace(login) ?: throwCannotGetUserRatingPlaceException()
+        val playerPlace = userService.getPlayerLeaderBoardPlace(login) ?: throwCannotGetUserRatingPlaceException()
 
         return LeaderBoardResponse(
             playerPlace = playerPlace,

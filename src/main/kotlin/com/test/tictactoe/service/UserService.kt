@@ -42,10 +42,10 @@ class UserService(
         }
     }
 
-    suspend fun getPlayerRatingPlace(login: String) : Int? = withContext(Dispatchers.IO) {
+    suspend fun getPlayerLeaderBoardPlace(login: String) : Int? = withContext(Dispatchers.IO) {
         val leaderBoard = getLeaderBoard()
 
-        // Get player place in leader board
+        // Get player place in leaderboard
         leaderBoard.indexOfFirst { it.first == login }.takeIf { it >= 0 }?.plus(1)
     }
 }
