@@ -42,9 +42,6 @@ data class Game(
     @Column
     var status: GameStatus = GameStatus.NOT_STARTED,
 
-    @Transient
-    val gameBot: GameBot? = null,
-
     @Column
     val isGameWithBot: Boolean = false,
 )

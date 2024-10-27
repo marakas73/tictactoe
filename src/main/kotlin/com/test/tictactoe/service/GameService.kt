@@ -52,7 +52,6 @@ class GameService (
                     memberSymbol = memberSymbol,
                     field = field,
                     needToWin = needToWin,
-                    gameBot = GameBot(memberSymbol, ::isWinningMove),
                     isGameWithBot = true,
                 ) else Game(
                     owner = owner,
@@ -157,9 +156,13 @@ class GameService (
                 changeCurrentMove(game)
 
                 if(game.isGameWithBot) {
-                    val move: Pair<Int, Int>? = game.gameBot?.getMove(game)
-                    if(move == null) GameStatus.ABORTED
-                    else handleMoveByBot(game, move.first, move.second)
+                    val move: Pair<Int, Int>? = GameBot.getMove(game, game.memberSymbol, this::isWinningMove)
+
+                    if(move == null) {
+                        GameStatus.ABORTED
+                    } else {
+                        handleMoveByBot(game, game.memberSymbol, move.first, move.second)
+                    }
                 } else GameStatus.IN_PROGRESS
             }
         }
@@ -173,10 +176,8 @@ class GameService (
         return newGameStatus
     }
 
-    private fun handleMoveByBot(game: Game, x: Int, y: Int) : GameStatus? {
-        val bot: GameBot = game.gameBot ?: return null
-
-        if(!isMoveValid(bot.botSymbol, game, x, y)) {
+    private fun handleMoveByBot(game: Game, botSymbol: GameSymbol, x: Int, y: Int) : GameStatus? {
+        if(!isMoveValid(botSymbol, game, x, y)) {
             return null
         }
 
@@ -193,13 +194,15 @@ class GameService (
     }
 
     private fun handleWin(game: Game) : GameStatus? {
-        val member = game.member ?: return null
+        if(!game.isGameWithBot) {
+            val member = game.member ?: return null
 
-        val winner = if (game.currentMove == game.ownerSymbol) game.owner else member
-        val looser = if (winner == game.owner) member else game.owner
+            val winner = if (game.currentMove == game.ownerSymbol) game.owner else member
+            val looser = if (winner == game.owner) member else game.owner
 
-        updateRating(winner, looser)
-        saveGameRecord(game.owner, member, winner, looser, false)
+            updateRating(winner, looser)
+            saveGameRecord(game.owner, member, winner, looser, false)
+        }
 
         return if (game.currentMove == GameSymbol.CROSS)
             GameStatus.CROSS_WON
@@ -208,10 +211,12 @@ class GameService (
     }
 
     private fun handleDraw(game: Game) : GameStatus? {
-        val member = game.member ?: return null
+        if(!game.isGameWithBot) {
+            val member = game.member ?: return null
 
-        updateRating(game.owner, member, true)
-        saveGameRecord(game.owner, member, null, null, true)
+            updateRating(game.owner, member, true)
+            saveGameRecord(game.owner, member, null, null, true)
+        }
 
         return GameStatus.DRAW
     }
