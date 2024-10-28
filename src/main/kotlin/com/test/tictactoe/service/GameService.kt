@@ -10,7 +10,6 @@ import com.test.tictactoe.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class GameService (
@@ -125,8 +124,9 @@ class GameService (
             return@withContext false
         }
 
+        playerGame.status = GameStatus.IN_PROGRESS
         playerGame.status = if(playerGame.isGameWithBot && playerGame.currentMove == playerGame.memberSymbol) {
-            val move: Pair<Int, Int>? = getMove(playerGame, playerGame.memberSymbol)
+            val move: Pair<Int, Int>? = getMoveByBot(playerGame, playerGame.memberSymbol)
 
             if(move == null) {
                 GameStatus.ABORTED
@@ -166,7 +166,7 @@ class GameService (
                 changeCurrentMove(game)
 
                 if(game.isGameWithBot) {
-                    val move: Pair<Int, Int>? = getMove(game, game.memberSymbol)
+                    val move: Pair<Int, Int>? = getMoveByBot(game, game.memberSymbol)
 
                     if(move == null) {
                         GameStatus.ABORTED
@@ -187,7 +187,7 @@ class GameService (
         return@withContext newGameStatus
     }
 
-    private fun getMove(
+    private fun getMoveByBot(
         game: Game,
         botSymbol: GameSymbol
     ): Pair<Int, Int>? {
@@ -195,6 +195,7 @@ class GameService (
             || game.currentMove != botSymbol
             || !game.isGameWithBot
         ) {
+
             return null
         }
 
@@ -326,17 +327,17 @@ class GameService (
 
     private fun isWinningMove(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int): Boolean {
         return (countDirection(game, currentMoveSymbol, x, y, 1, 0)
-                + countDirection(game, currentMoveSymbol, x, y, -1, 0) >= game.needToWin)
+                + countDirection(game, currentMoveSymbol, x, y, -1, 0) + 1 >= game.needToWin)
                 || (countDirection(game, currentMoveSymbol, x, y, 0, -1)
-                + countDirection(game, currentMoveSymbol, x, y, 0, 1) >= game.needToWin)
+                + countDirection(game, currentMoveSymbol, x, y, 0, 1) + 1 >= game.needToWin)
                 || (countDirection(game, currentMoveSymbol, x, y, -1, -1)
-                + countDirection(game, currentMoveSymbol, x, y, 1, 1) >= game.needToWin)
+                + countDirection(game, currentMoveSymbol, x, y, 1, 1) + 1 >= game.needToWin)
                 || (countDirection(game, currentMoveSymbol, x, y, -1, 1)
-                + countDirection(game, currentMoveSymbol, x, y, 1, -1) >= game.needToWin)
+                + countDirection(game, currentMoveSymbol, x, y, 1, -1) + 1 >= game.needToWin)
     }
 
     private fun countDirection(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int, deltaX: Int, deltaY: Int): Int {
-        var counter = 1
+        var counter = 0 // Not including (x,y) symbol
         var currentX = x + deltaX
         var currentY = y + deltaY
 
