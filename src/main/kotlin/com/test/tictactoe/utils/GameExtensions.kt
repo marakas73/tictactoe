@@ -23,5 +23,6 @@ fun Game.toGameStateResponse(): GameStateResponse {
         memberLogin = this.member?.login,
         ownerSymbol = this.ownerSymbol,
         memberSymbol = this.memberSymbol,
+        isGameWithBot = this.isGameWithBot,
     )
 }

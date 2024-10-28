@@ -61,7 +61,7 @@ class GameHttpController (
         val token = authHeader.substringAfter("Bearer ")
         val login = tokenService.extractLogin(token) ?: throwForbidden()
 
-        return gameService.makeMove(
+        return gameService.handleMoveByPlayer(
             playerLogin = login,
             x = request.x,
             y = request.y,

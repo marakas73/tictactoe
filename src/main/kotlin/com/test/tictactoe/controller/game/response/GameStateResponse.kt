@@ -11,4 +11,5 @@ data class GameStateResponse (
     val memberLogin: String?,
     val ownerSymbol: GameSymbol,
     val memberSymbol: GameSymbol,
+    val isGameWithBot: Boolean,
 )

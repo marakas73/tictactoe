@@ -2,7 +2,9 @@ package com.test.tictactoe.model
 
 import com.test.tictactoe.enum.GameStatus
 import com.test.tictactoe.enum.GameSymbol
+import com.test.tictactoe.service.GameService
 import jakarta.persistence.*
+import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "games")
@@ -39,4 +41,7 @@ data class Game(
 
     @Column
     var status: GameStatus = GameStatus.NOT_STARTED,
+
+    @Column
+    val isGameWithBot: Boolean = false,
 )
