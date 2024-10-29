@@ -10,6 +10,7 @@ import com.test.tictactoe.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
+import com.test.tictactoe.utils.*
 
 @Service
 class GameService (
@@ -306,57 +307,8 @@ class GameService (
         gameHistoryRepository.save(gameRecord)
     }
 
-    private fun isPositionValid(game: Game, x: Int, y: Int): Boolean {
-        return !(x < 0 || x >= game.field.width || y < 0 || y >= game.field.height)
-    }
-
-    private fun isMoveValid(moveSymbol: GameSymbol, game: Game, x: Int, y: Int) : Boolean {
-        return (game.status == GameStatus.IN_PROGRESS
-                && isPositionValid(game, x, y)
-                && game.field.field[y][x] == null
-                && (moveSymbol == game.currentMove))
-    }
-
     private fun changeCurrentMove(game: Game) {
         game.currentMove = GameSymbol.entries[(game.currentMove.ordinal + 1) % GameSymbol.entries.size]
-    }
-
-    private fun isDraw(game: Game): Boolean {
-        return !game.field.field.any { innerList -> innerList.contains(null) }
-    }
-
-    private fun isWinningMove(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int): Boolean {
-        return (countDirection(game, currentMoveSymbol, x, y, 1, 0)
-                + countDirection(game, currentMoveSymbol, x, y, -1, 0) + 1 >= game.needToWin)
-                || (countDirection(game, currentMoveSymbol, x, y, 0, -1)
-                + countDirection(game, currentMoveSymbol, x, y, 0, 1) + 1 >= game.needToWin)
-                || (countDirection(game, currentMoveSymbol, x, y, -1, -1)
-                + countDirection(game, currentMoveSymbol, x, y, 1, 1) + 1 >= game.needToWin)
-                || (countDirection(game, currentMoveSymbol, x, y, -1, 1)
-                + countDirection(game, currentMoveSymbol, x, y, 1, -1) + 1 >= game.needToWin)
-    }
-
-    private fun countDirection(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int, deltaX: Int, deltaY: Int): Int {
-        var counter = 0 // Not including (x,y) symbol
-        var currentX = x + deltaX
-        var currentY = y + deltaY
-
-        while (
-            isWithinBounds(game, currentX, currentY)
-            && game.field.field[currentY][currentX] == currentMoveSymbol
-        ) {
-            counter++
-            if (counter == game.needToWin) {
-                return counter
-            }
-            currentX += deltaX
-            currentY += deltaY
-        }
-        return counter
-    }
-
-    private fun isWithinBounds(game: Game, x: Int, y: Int): Boolean {
-        return x in 0 until game.field.width && y in 0 until game.field.height
     }
 
     private fun deleteGame(game: Game) {
