@@ -1,9 +1,10 @@
 package com.test.tictactoe.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import com.test.tictactoe.enum.GameStatus
 import com.test.tictactoe.enum.GameSymbol
+import com.test.tictactoe.service.GameService
 import jakarta.persistence.*
+import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "games")
@@ -13,7 +14,7 @@ data class Game(
 
     @OneToOne
     @JoinColumn(name = "owner_id", referencedColumnName = "id")
-    val owner: User,
+    val owner: User = User(),
 
     @OneToOne
     @JoinColumn(name = "member_id", referencedColumnName = "id")
@@ -21,18 +22,18 @@ data class Game(
 
     @Enumerated(EnumType.STRING)
     @Column
-    val ownerSymbol: GameSymbol,
+    val ownerSymbol: GameSymbol = GameSymbol.CROSS,
 
     @Enumerated(EnumType.STRING)
     @Column
-    val memberSymbol: GameSymbol,
+    val memberSymbol: GameSymbol = GameSymbol.ZERO,
 
     @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn(name = "field_id", referencedColumnName = "id")
-    val field: Field,
+    val field: Field = Field(),
 
     @Column
-    val needToWin: Int,
+    val needToWin: Int = 3,
 
     @Enumerated(EnumType.STRING)
     @Column
@@ -40,7 +41,7 @@ data class Game(
 
     @Column
     var status: GameStatus = GameStatus.NOT_STARTED,
-){
-    // Конструктор по умолчанию для JPA
-    constructor() : this(0, User(), null, GameSymbol.CROSS, GameSymbol.ZERO, Field(width = 3, height = 3), 3, GameSymbol.CROSS, GameStatus.NOT_STARTED)
-}
+
+    @Column
+    val isGameWithBot: Boolean = false,
+)

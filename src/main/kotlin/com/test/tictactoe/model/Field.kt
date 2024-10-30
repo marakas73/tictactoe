@@ -15,18 +15,15 @@ data class Field(
     @Column
     @Min(3)
     @Max(100)
-    val width: Int,
+    val width: Int = 0,
 
     @Column
     @Min(3)
     @Max(100)
-    val height: Int,
+    val height: Int = 0,
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "field_cells", joinColumns = [JoinColumn(name = "field_id")])
     @Column(name = "symbol")
     val field: List<MutableList<GameSymbol?>> = List(height) { MutableList(width) { null } }
-) {
-    // Конструктор по умолчанию для JPA
-    constructor() : this(0, 3, 3, List(3) { MutableList(3) { null } })
-}
+)

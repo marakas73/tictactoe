@@ -3,8 +3,8 @@ spring:
     name: tictactoe
   datasource:
     url: jdbc:postgresql://localhost:5432/tictactoe
-    username: postgres
-    password: root
+    username:
+    password:
   jpa:
     hibernate:
       ddl-auto: none
@@ -12,6 +12,6 @@ spring:
     change-log: db/changelog/main-changelog.xml
     enabled: false
 jwt:
-  key: ${JWT_KEY}
+  key: vFHK5QhGyU1TkVhslB7fykl9mB4Hfr+N3dQ5BhvZ2K8=
   access-token-expiration: 3600000
   refresh-token-expiration: 86400000

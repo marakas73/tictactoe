@@ -7,5 +7,6 @@ data class GameCreateRequest(
     val memberSymbol: GameSymbol,
     val width: Int,
     val height: Int,
-    val needToWin: Int
+    val needToWin: Int,
+    val isGameWithBot: Boolean,
 )

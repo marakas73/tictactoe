@@ -1,6 +1,5 @@
 package com.test.tictactoe.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 
 @Entity
@@ -12,24 +11,20 @@ data class GameRecord (
 
     @ManyToOne
     @JoinColumn(name = "player1", referencedColumnName = "id")
-    val player1: User,
+    val player1: User = User(),
 
     @ManyToOne
     @JoinColumn(name = "player2", referencedColumnName = "id")
-    val player2: User,
+    val player2: User = User(),
 
     @ManyToOne
     @JoinColumn(name = "winner_id", referencedColumnName = "id")
-    val winner: User?,
+    val winner: User? = null,
 
     @ManyToOne
     @JoinColumn(name = "looser_id", referencedColumnName = "id")
-    var looser: User?,
+    var looser: User? = null,
 
     @Column
-    val isDraw: Boolean
-) {
-    // Конструктор по умолчанию для JPA
-    constructor() : this(0, User(), User(), null, null, true)
-
-}
+    val isDraw: Boolean = true,
+)

@@ -12,7 +12,7 @@ async function fetchUserInfo() {
         }
 
         const info = await response.json();
-        return info.rating; // Возвращаем рейтинг
+        return info;
 
     } catch (error) {
         console.error('Ошибка при получении информации о пользователе:', error);
@@ -39,24 +39,109 @@ document.addEventListener('DOMContentLoaded', () => {
         return JSON.parse(jsonPayload);
     }
 
+
+    // Current game
+    let currentGameDiv = document.getElementById('current-game');
+
+    if(!currentGameDiv) {
+        currentGameDiv = document.createElement('div');
+        currentGameDiv.id = 'current-game';
+
+        document.body.appendChild(currentGameDiv);
+    }
+
+    fetchUserInfo().then(info => {
+
+        // Get user current game id (may be null)
+        const currentGameId = info.currentGameId;
+
+        // Clear current game div anyway to show actual info
+        currentGameDiv.innerHTML = '';
+
+        if(currentGameId) {
+            // Add buttons and label
+
+            // Create div
+            currentGameIdLabel = document.createElement('p');
+            currentGameIdLabel.textContent = `Внимание! Вы все еще в игре с ID: ${currentGameId}`;
+            currentGameIdLabel.id = 'current-game-id-label';
+            currentGameDiv.appendChild(currentGameIdLabel);
+
+            // Create back to game button
+            const backToGameButton = document.createElement('button');
+            backToGameButton.innerText = 'Вернуться в игру';
+            backToGameButton.id = 'back-to-game-button';
+            currentGameDiv.appendChild(backToGameButton);
+
+            // Create leave button
+            const leaveCurrentGameButton = document.createElement('button');
+            leaveCurrentGameButton.innerText = 'Покинуть текущую игру';
+            leaveCurrentGameButton.id = 'leave-current-game-button';
+            currentGameDiv.appendChild(leaveCurrentGameButton);
+
+            // Disable join & create game buttons
+            const createGameButton = document.getElementById('create-game');
+            const joinGameButton = document.getElementById('join-game');
+            createGameButton.disabled = true;
+            joinGameButton.disabled = true;
+
+            // Back to game button handler
+            backToGameButton.addEventListener('click', async () => {
+                window.location.href = `/game?id=${currentGameId}`;
+            });
+
+            // Leave current game button handler
+            leaveCurrentGameButton.addEventListener('click', async () => {
+                try {
+                    const response = await fetch(`/api/game/leave`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    if (response.ok) {
+                        // Clear current game div
+                        currentGameDiv.innerHTML = '';
+
+                        // Enable join & create game buttons
+                        const createGameButton = document.getElementById('create-game');
+                        const joinGameButton = document.getElementById('join-game');
+                        createGameButton.disabled = false;
+                        joinGameButton.disabled = false;
+                    } else {
+                        // Ошибка при выходе из игры
+                        currentGameDiv.innerText = 'Ошибка при выходе из игры.';
+                    }
+                } catch (error) {
+                    currentGameDiv.innerText = 'Произошла ошибка: ' + error.message;
+                }
+            });
+        }
+    });
+
+
+    // Приветствие пользователя
+
     const userData = parseJwt(token);
     const username = userData.sub;
 
-    // Приветствие пользователя
     document.getElementById('welcome-message').innerText = `Добро пожаловать, ${username}!`;
 
+
     // Rating message
-    fetchUserInfo().then(rating => {
-        document.getElementById('rating-message').innerText = `Ваш рейтинг: ${rating}`;
+    fetchUserInfo().then(info => {
+        document.getElementById('rating-message').innerText = `Ваш рейтинг: ${info.rating}`;
     });
 
-    const messageDiv = document.getElementById('message');
 
     document.getElementById('create-game').addEventListener('click', () => {
         window.location.href = '/game/create';
     });
 
+
     document.getElementById('join-game').addEventListener('click', () => {
+        const messageDiv = document.getElementById('message');
+
         // Создаем поле для ввода ID игры, если оно еще не создано
         let gameIdInput = document.getElementById('game-id-input');
         if (!gameIdInput) {
@@ -100,17 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+
     document.getElementById('game-history').addEventListener('click', () => {
         window.location.href = '/history';
     });
+
 
     document.getElementById('leaderboard').addEventListener('click', () => {
             window.location.href = '/leaderboard';
         });
 
+
     document.getElementById('logout').addEventListener('click', () => {
         localStorage.removeItem('accessToken');
         window.location.href = '/auth/login';
     });
+
 
 });

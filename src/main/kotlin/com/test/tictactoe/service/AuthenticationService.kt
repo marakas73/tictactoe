@@ -69,5 +69,4 @@ class AuthenticationService(
         userDetails = user,
         expirationDate = Date(System.currentTimeMillis() + jwtProperties.accessTokenExpiration)
     )
-
 }

@@ -1,6 +1,5 @@
 package com.test.tictactoe.repository
 
-import com.test.tictactoe.model.Game
 import com.test.tictactoe.model.GameRecord
 import com.test.tictactoe.model.User
 import org.springframework.data.jpa.repository.JpaRepository
