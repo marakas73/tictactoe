@@ -127,13 +127,9 @@ class GameService (
 
         playerGame.status = GameStatus.IN_PROGRESS
         playerGame.status = if(playerGame.isGameWithBot && playerGame.currentMove == playerGame.memberSymbol) {
-            val move: Pair<Int, Int>? = getMoveByBot(playerGame, playerGame.memberSymbol)
+            val move: Pair<Int, Int> = GameBot.getOptimalMove(playerGame)
+            handleMoveByBot(playerGame, playerGame.memberSymbol, move.first, move.second) ?: GameStatus.ABORTED
 
-            if(move == null) {
-                GameStatus.ABORTED
-            } else {
-                handleMoveByBot(playerGame, playerGame.memberSymbol, move.first, move.second) ?: GameStatus.ABORTED
-            }
         } else GameStatus.IN_PROGRESS
 
         gameRepository.save(playerGame)
@@ -158,7 +154,7 @@ class GameService (
             return@withContext null
         }
 
-        doMove(game, playerMoveSymbol, x, y)
+        game.field.field[y][x] = playerMoveSymbol
 
         val newGameStatus = when {
             isWinningMove(game, playerMoveSymbol, x, y) -> handleWin(game)
@@ -167,19 +163,16 @@ class GameService (
                 changeCurrentMove(game)
 
                 if(game.isGameWithBot) {
-                    val move: Pair<Int, Int>? = getMoveByBot(game, game.memberSymbol)
+                    val move: Pair<Int, Int> = GameBot.getOptimalMove(game)
+                    handleMoveByBot(game, game.memberSymbol, move.first, move.second)
 
-                    if(move == null) {
-                        GameStatus.ABORTED
-                    } else {
-                        handleMoveByBot(game, game.memberSymbol, move.first, move.second)
-                    }
                 } else GameStatus.IN_PROGRESS
             }
         }
 
         // Set new status to game and save
         if(game.status != newGameStatus) {
+
             game.status = newGameStatus ?: return@withContext null
         }
 
@@ -188,56 +181,12 @@ class GameService (
         return@withContext newGameStatus
     }
 
-    private fun getMoveByBot(
-        game: Game,
-        botSymbol: GameSymbol
-    ): Pair<Int, Int>? {
-        if (game.status != GameStatus.IN_PROGRESS
-            || game.currentMove != botSymbol
-            || !game.isGameWithBot
-        ) {
-
-            return null
-        }
-
-        val possibleMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-        val possibleWinMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-        val possibleOpponentWinMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-
-        val field = game.field.field
-        for (y in 0 until game.field.height) {
-            for (x in 0 until game.field.width) {
-                if (field[y][x] == null) {
-                    val currentPair = Pair(x, y)
-
-                    possibleMoves.add(currentPair)
-
-                    if (isWinningMove(game, botSymbol, x, y)) {
-                        possibleWinMoves.add(currentPair)
-                    } else if (isWinningMove(game, game.ownerSymbol, x, y)) {
-                        possibleOpponentWinMoves.add(currentPair)
-                    }
-                }
-            }
-        }
-
-        return if (possibleWinMoves.isNotEmpty()) { // Return a random winning move if it exists
-            possibleWinMoves.random()
-        } else if (possibleOpponentWinMoves.isNotEmpty()) { // Otherwise, block the random opponent's winning move
-            possibleOpponentWinMoves.random()
-        } else if (possibleMoves.isNotEmpty()) { // If the opponent has no winning move, return a random possible move
-            possibleMoves.random()
-        } else { // If there are no moves at all, return null
-            return null
-        }
-    }
-
     private fun handleMoveByBot(game: Game, botSymbol: GameSymbol, x: Int, y: Int) : GameStatus? {
         if(!isMoveValid(botSymbol, game, x, y)) {
             return null
         }
 
-        doMove(game, game.currentMove, x, y)
+        game.field.field[y][x] = game.currentMove
 
         return when {
             isWinningMove(game, game.currentMove, x, y) -> handleWin(game)
@@ -277,10 +226,6 @@ class GameService (
         return GameStatus.DRAW
     }
 
-    private fun doMove(game: Game, symbol: GameSymbol, x: Int, y: Int) {
-        game.field.field[y][x] = symbol
-    }
-
     private fun updateRating(winner: User, loser: User, isDraw: Boolean = false) {
         fun safeUpdate(winnerRatingBonus: Int, loserRatingBonus: Int) {
             winner.rating = maxOf(0, winner.rating + winnerRatingBonus)
@@ -305,10 +250,6 @@ class GameService (
         )
 
         gameHistoryRepository.save(gameRecord)
-    }
-
-    private fun changeCurrentMove(game: Game) {
-        game.currentMove = GameSymbol.entries[(game.currentMove.ordinal + 1) % GameSymbol.entries.size]
     }
 
     private fun deleteGame(game: Game) {

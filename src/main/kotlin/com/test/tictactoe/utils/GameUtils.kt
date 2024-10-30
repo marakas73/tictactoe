@@ -52,3 +52,25 @@ fun countDirection(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int, de
 fun isWithinBounds(game: Game, x: Int, y: Int): Boolean {
     return x in 0 until game.field.width && y in 0 until game.field.height
 }
+
+fun countEmptyCells(field: List<MutableList<GameSymbol?>>): Int {
+    return field.sumOf { list -> list.count { it == null } }
+}
+
+fun getPossibleMoves(game: Game): List<Pair<Int, Int>> {
+    val possibleMoves: MutableList<Pair<Int, Int>> = mutableListOf()
+
+    for (y in 0 until game.field.height) {
+        for (x in 0 until game.field.width) {
+            if (game.field.field[y][x] == null) {
+                possibleMoves.add(Pair(x, y))
+            }
+        }
+    }
+
+    return possibleMoves.toList()
+}
+
+fun changeCurrentMove(game: Game) {
+    game.currentMove = GameSymbol.entries[(game.currentMove.ordinal + 1) % GameSymbol.entries.size]
+}
