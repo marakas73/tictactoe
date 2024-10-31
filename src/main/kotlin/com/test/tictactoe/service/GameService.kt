@@ -165,7 +165,6 @@ class GameService (
                 if(game.isGameWithBot) {
                     val move: Pair<Int, Int> = GameBot.getOptimalMove(game)
                     handleMoveByBot(game, game.memberSymbol, move.first, move.second)
-
                 } else GameStatus.IN_PROGRESS
             }
         }

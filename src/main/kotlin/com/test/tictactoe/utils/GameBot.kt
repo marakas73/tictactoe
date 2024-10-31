@@ -3,159 +3,147 @@ package com.test.tictactoe.utils
 import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
+import kotlin.math.max
+import kotlin.math.min
 
 class GameBot {
     companion object {
         private const val DEFAULT_MAX_DEPTH = 10
-        private const val MINIMAX_ENABLING_NUMBER = 25
 
         fun getOptimalMove(
             game: Game,
-            depthOfCalculation: Int = DEFAULT_MAX_DEPTH
-        ) : Pair<Int, Int> {
-            val optimalMoves : MutableList<Pair<Int, Int>> = mutableListOf()
-            var currentMaxMoveValue: Int = Int.MIN_VALUE
+            depth: Int = DEFAULT_MAX_DEPTH
+        ): Pair<Int, Int> {
+            val optimalMoves: MutableList<Pair<Int, Int>> = mutableListOf()
+            var currentMaxMoveValue = Int.MIN_VALUE
 
-            getPossibleMoves(game).forEach { move ->
-                val x = move.first
-                val y = move.second
+            val field = game.field.field
+            for (rowIndex in field.indices) {
+                for (colIndex in field[rowIndex].indices) {
+                    // If cell isn't empty
+                    if (field[rowIndex][colIndex] != null)
+                        continue;
 
+                    // Temp move
+                    field[rowIndex][colIndex] = game.memberSymbol
+                    val moveValue = minimax(
+                        colIndex,
+                        rowIndex,
+                        alpha = Int.MIN_VALUE,
+                        beta = Int.MAX_VALUE,
+                        isBotTurn = false,
+                        depth = depth,
+                        game = game
+                    )
+                    // Remove temp move
+                    field[rowIndex][colIndex] = null
 
-                val moveValue = minimaxAlgorithm(
-                    gameCopy = game.copy(),
-                    x = x,
-                    y = y,
-                    isBotTurn = true,
-                    alpha = Int.MIN_VALUE,
-                    beta = Int.MAX_VALUE,
-                    currentDepth = 0
-                )
-
-                println("$x $y $moveValue") // TODO
-
-
-                if(moveValue > currentMaxMoveValue) {
-                    currentMaxMoveValue = moveValue
-                    optimalMoves.clear()
-                    optimalMoves.add(Pair(x, y))
-                } else if (moveValue == currentMaxMoveValue) {
-                    optimalMoves.add(Pair(x, y))
+                    if (moveValue > currentMaxMoveValue) {
+                        currentMaxMoveValue = moveValue
+                        optimalMoves.clear()
+                        optimalMoves.add(Pair(colIndex, rowIndex))
+                    } else if (moveValue == currentMaxMoveValue) {
+                        optimalMoves.add(Pair(colIndex, rowIndex))
+                    }
                 }
             }
-
             return optimalMoves.random()
         }
 
-        private fun minimaxAlgorithm(
-            gameCopy: Game,
+        private fun minimax(
             x: Int,
             y: Int,
-            isBotTurn: Boolean,
+            depth: Int,
             alpha: Int,
             beta: Int,
-            currentDepth: Int,
-            maxDepth: Int = DEFAULT_MAX_DEPTH,
-        ) : Int {
+            isBotTurn: Boolean,
+            game: Game
+        ): Int {
+            if (depth == 0)
+            {
+                return 0
+        }
+            val gameResult = checkGameResult(game, x, y, !isBotTurn)
+            if (gameResult != null)
+                return gameResult
 
-            if(currentDepth > maxDepth) return 0
 
-            //println("$x $y $isBotTurn $currentDepth") // TODO
+            val field = game.field.field;
+            if (isBotTurn) {
+                var maxEval = Int.MIN_VALUE
 
-            val fieldCopy = gameCopy.field.field.map{it.toMutableList()}
+                for (rowIndex in field.indices) {
+                    for (colIndex in field[rowIndex].indices) {
+                        // If cell isn't empty
+                        if (field[rowIndex][colIndex] != null)
+                            continue
 
-            // Do move
-            fieldCopy[y][x] = if(isBotTurn) gameCopy.memberSymbol else gameCopy.ownerSymbol
+                        // Temp move
+                        field[rowIndex][colIndex] = game.memberSymbol
+                        val eval = minimax(
+                            x = colIndex,
+                            y = rowIndex,
+                            depth = depth - 1,
+                            alpha = alpha,
+                            beta = beta,
+                            isBotTurn = false,
+                            game = game
+                        )
+                        // Remove temp move
+                        field[rowIndex][colIndex] = null
 
-            // Check for end game
-            when {
-                isDraw(gameCopy) -> {
-                    //println("draw") // TODO
-                    return 0
-                }
-                isBotTurn -> {
-                    if(isWinningMove(gameCopy, gameCopy.memberSymbol, x, y)) {
-                        //println("win") // TODO
-                        return 10
+                        maxEval = max(maxEval, eval)
+
+                        val newAlpha = max(alpha, eval)
+                        if (beta <= newAlpha)
+                            return maxEval
                     }
-
-
                 }
-                !isBotTurn -> {
-                    if(isWinningMove(gameCopy, gameCopy.ownerSymbol, x, y)) {
-                        //println("lose") // TODO
-                        return -10
-                    }
 
-
-                }
-            }
-
-            changeCurrentMove(gameCopy)
-
-            var currentAlpha = alpha
-            var currentBeta = beta
-
-            return if (isBotTurn) {
-                var bestValue = Int.MIN_VALUE
-                getPossibleMoves(gameCopy).forEach { move ->
-                    val moveX = move.first
-                    val moveY = move.second
-
-                    // Do move
-                    gameCopy.field.field[moveY][moveX] = gameCopy.memberSymbol
-
-                    val value = minimaxAlgorithm(
-                        gameCopy = gameCopy
-                            .copy(
-                                field = gameCopy.field
-                                    .copy(
-                                        field = gameCopy.field.field
-                                            .map{it.toMutableList()}
-                                    )
-                            ),
-                        x = moveX,
-                        y = moveY,
-                        isBotTurn = false,
-                        alpha = currentAlpha,
-                        beta = currentBeta,
-                        currentDepth = currentDepth + 1
-                    )
-
-                    // Undo move
-                    gameCopy.field.field[moveY][moveX] = null
-
-                    bestValue = maxOf(bestValue, value)
-                    currentAlpha = maxOf(currentAlpha, bestValue)
-                    if (currentBeta <= currentAlpha) return bestValue  // Альфа-бета отсечение
-                }
-                bestValue
+                return maxEval
             } else {
-                var bestValue = Int.MAX_VALUE
-                getPossibleMoves(gameCopy).forEach { move ->
-                    val moveX = move.first
-                    val moveY = move.second
+                var minEval = Int.MAX_VALUE
 
-                    // Do move
-                    gameCopy.field.field[moveY][moveX] = gameCopy.ownerSymbol
+                for (rowIndex in field.indices) {
+                    for (colIndex in field[rowIndex].indices) {
+                        // If cell isn't empty
+                        if (field[rowIndex][colIndex] != null)
+                            continue;
 
-                    val value = minimaxAlgorithm(
-                        gameCopy = gameCopy.copy(),
-                        x = moveX,
-                        y = moveY,
-                        isBotTurn = true,
-                        alpha = currentAlpha,
-                        beta = currentBeta,
-                        currentDepth = currentDepth + 1
-                    )
+                        // Temp move
+                        field[rowIndex][colIndex] = game.ownerSymbol
+                        val eval = minimax(
+                            x = colIndex,
+                            y = rowIndex,
+                            depth = depth - 1,
+                            alpha = alpha,
+                            beta = beta,
+                            isBotTurn = true,
+                            game = game
+                        )
+                        // Remove temp move
+                        field[rowIndex][colIndex] = null
 
-                    // Undo move
-                    gameCopy.field.field[moveY][moveX] = null
-
-                    bestValue = minOf(bestValue, value)
-                    currentBeta = minOf(currentBeta, bestValue)
-                    if (currentBeta <= currentAlpha) return bestValue  // Альфа-бета отсечение
+                        minEval = min(minEval, eval)
+                        val newBeta = min(beta, eval)
+                        if (newBeta <= alpha)
+                            return minEval
+                    }
                 }
-                bestValue
+
+                return minEval
+            }
+        }
+
+        private fun getPlayerSymbol(game: Game, isBot: Boolean): GameSymbol =
+            if (isBot) game.memberSymbol else game.ownerSymbol
+
+        private fun checkGameResult(game: Game, x: Int, y: Int, isBotTurn: Boolean): Int? {
+            val symbol = getPlayerSymbol(game, isBotTurn)
+            return when {
+                isWinningMove(game, symbol, x, y) -> if (isBotTurn) 10 else -10
+                isDraw(game) -> 0
+                else -> null
             }
         }
     }

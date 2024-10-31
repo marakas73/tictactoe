@@ -46,6 +46,7 @@ fun countDirection(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int, de
         currentX += deltaX
         currentY += deltaY
     }
+
     return counter
 }
 
