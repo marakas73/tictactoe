@@ -3,17 +3,14 @@ document.getElementById('createGameForm').addEventListener('submit', async funct
 
     const ownerSymbol = document.getElementById('ownerSymbol').value; // "X" или "O"
     const memberSymbol = document.getElementById('memberSymbol').value; // "X" или "O"
-    const width = document.getElementById('width').value;
-    const height = document.getElementById('height').value;
-    const needToWin = document.getElementById('needToWin').value;
     const isGameWithBot = document.getElementById('isGameWithBot').checked;
 
     const requestData = {
         ownerSymbol: ownerSymbol === "X" ? "CROSS" : "ZERO", // Конвертация в enum
         memberSymbol: memberSymbol === "X" ? "CROSS" : "ZERO", // Конвертация в enum
-        width: parseInt(width),
-        height: parseInt(height),
-        needToWin: parseInt(needToWin),
+        width: 19,
+        height: 19,
+        needToWin: 5,
         isGameWithBot: isGameWithBot,
     };
 
