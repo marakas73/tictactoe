@@ -6,4 +6,8 @@ data class Cell(
     val x: Int,
     val y: Int,
     val symbol: GameSymbol?,
-)
+) {
+    override fun toString(): String { // TODO
+        return "($x-$y $symbol)"
+    }
+}

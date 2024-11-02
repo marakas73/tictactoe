@@ -2,6 +2,8 @@ package com.test.tictactoe.utils
 
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.utils.game.Cell
+import com.test.tictactoe.utils.game.Direction
+import com.test.tictactoe.utils.game.Move
 import com.test.tictactoe.utils.game.isWithinBounds
 
 fun Field.getDirection(
@@ -12,26 +14,37 @@ fun Field.getDirection(
     toDeltaX: Int,
     toDeltaY: Int,
     oneSideLength: Int = 5
-) : List<Cell> {
+) : Direction {
     var currentX = startX + fromDeltaX * (oneSideLength - 1)
     var currentY = startY + fromDeltaY * (oneSideLength - 1)
+    var centerIndex: Int = 0
+    var index = -1
 
-    val direction = mutableListOf<Cell>()
+    val sequence = mutableListOf<Cell>()
     while(((currentX != startX + toDeltaX * oneSideLength) || toDeltaX == 0)
         && ((currentY != startY + toDeltaY * oneSideLength) || toDeltaY == 0)
     ) {
-        if(isWithinBounds(this, currentX, currentY))
-            direction.add(Cell(currentX, currentY, this.field[currentY][currentX]))
+        if(isWithinBounds(this, currentX, currentY)) {
+            sequence.add(Cell(currentX, currentY, this.field[currentY][currentX]))
+
+            index++
+            if(currentX == startX && currentY == startY) {
+                centerIndex = index
+            }
+        }
 
         currentX += toDeltaX
         currentY += toDeltaY
     }
 
-    return direction.toList()
+    return Direction(
+        sequence.toList(),
+        centerIndex,
+    )
 }
 
-fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<List<Cell>> {
-    val directions = mutableListOf<List<Cell>>()
+fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direction> {
+    val directions = mutableListOf<Direction>()
 
     directions.add(this.getDirection(fromX,
         fromY,
@@ -71,18 +84,45 @@ fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<List<
 
 fun Field.hasAdjacent(x: Int, y: Int, distance: Int = 2) : Boolean {
     for(direction in this.getAllDirections(x, y)) {
-        for(i in direction.indices) {
-            if(i > distance)
-                break
-
-            if(direction[i].symbol != null)
+        for(i in 1.. distance) {
+            if(direction.sequence.getOrNull(direction.centerIndex + i)?.symbol != null
+                || direction.sequence.getOrNull(direction.centerIndex - i)?.symbol != null) {
                 return true
+            }
         }
     }
 
     return false
 }
 
-fun Field.hasMoves() : Boolean {
-    return field.any { row -> row.any { symbol -> symbol != null } }
+fun Field.getMoves() : List<Move> {
+    val moves = mutableListOf<Move>()
+
+    for (y in this.field.indices) {
+        for (x in this.field[y].indices) {
+            if (this.field[y][x] != null) {
+                moves.add(
+                    Move(x, y)
+                )
+            }
+        }
+    }
+
+    return moves.toList()
+}
+
+fun Field.getMovesToEmptyCells() : List<Move> {
+    val moves = mutableListOf<Move>()
+    for(y in this.field.indices) {
+        for(x in this.field[y].indices) {
+            if(this.field[y][x] != null)
+                continue
+
+            moves.add(
+                Move(x, y)
+            )
+        }
+    }
+
+    return moves.toList()
 }

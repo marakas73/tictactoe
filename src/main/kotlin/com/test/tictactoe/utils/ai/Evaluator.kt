@@ -73,7 +73,7 @@ object Evaluator {
         var score = 0
 
         for (direction in field.getAllDirections(x, y)) {
-            score += scoreDirection(direction.map { it.symbol }, symbol)
+            score += scoreDirection(direction.sequence.map { it.symbol }, symbol)
         }
 
         return score

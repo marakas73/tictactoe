@@ -58,14 +58,14 @@ internal object ThreatUtils {
             for (pattern in patternList) {
                 // Try to find the pattern
                 val patternIndex = matchPattern(
-                    direction,
+                    direction.sequence,
                     pattern.getPattern(playerSymbol)
                 )
                 if (patternIndex != -1) {
                     // Found pattern, get the squares in the pattern and map
                     // them to moves on the board
                     for (patternSquareIndex in pattern.patternSquares) {
-                        val patternSquareCell = direction[patternIndex + patternSquareIndex]
+                        val patternSquareCell = direction.sequence[patternIndex + patternSquareIndex]
                         threatMoves.add(
                             Move(
                                 patternSquareCell.x,

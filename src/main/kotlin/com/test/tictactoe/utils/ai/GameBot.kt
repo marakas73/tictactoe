@@ -3,18 +3,26 @@ package com.test.tictactoe.utils.ai
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
 import com.test.tictactoe.utils.hasAdjacent
-import com.test.tictactoe.utils.hasMoves
-import java.util.HashSet
+import com.test.tictactoe.utils.getMoves
 import kotlin.math.max
 import kotlin.math.min
 
 object GameBot {
-    private const val DEFAULT_MAX_DEPTH = 2
+    private const val DEFAULT_MAX_DEPTH = 3
+
+    private var handledScenarioCount = 0 // TODO
+    private var startTime = 0L // TODO
 
     fun getOptimalMove(
         game: Game,
         depth: Int = DEFAULT_MAX_DEPTH
     ): Pair<Int, Int> {
+
+
+        startTime = System.currentTimeMillis() // TODO
+
+
+
         val optimalMoves: MutableList<Pair<Int, Int>> = mutableListOf()
         var currentMaxMoveValue = Int.MIN_VALUE
 
@@ -47,7 +55,24 @@ object GameBot {
             }
         }
 
-        return optimalMoves.random()
+        println() // TODO
+        println("scenario count: " + handledScenarioCount) // TODO
+        println("time: " + (System.currentTimeMillis() - startTime)) // TODO
+        println() // TODO
+
+
+        return if(optimalMoves.isNotEmpty()) {
+
+
+            println() // TODO
+            println("OPTIMAL: " + optimalMoves) // TODO
+            println() // TODO
+
+
+
+            optimalMoves.random()
+        }
+        else Pair(0, 0) // TODO
     }
 
     private fun minimax(
@@ -59,6 +84,12 @@ object GameBot {
         isBotTurn: Boolean,
         game: Game
     ): Int {
+
+
+        handledScenarioCount++ // TODO
+
+
+
         if (depth == 0 || getWinner(game, Move(x, y)) != null) {
             return Evaluator.evaluateState(game, Move(x, y), depth)
         }
@@ -89,8 +120,9 @@ object GameBot {
                 maxEval = max(maxEval, eval)
 
                 val newAlpha = max(alpha, eval)
-                if (beta <= newAlpha)
-                    return maxEval
+                /*if (beta <= newAlpha) {
+                    //return maxEval TODO
+                }*/
             }
 
             return maxEval
@@ -118,9 +150,9 @@ object GameBot {
 
                 minEval = min(minEval, eval)
                 val newBeta = min(beta, eval)
-                if (newBeta <= alpha)
-                    return minEval
-
+                /*if (newBeta <= alpha) {
+                    // return minEval TODO
+                }*/
             }
 
             return minEval
@@ -228,7 +260,7 @@ object GameBot {
     private fun getSortedPotentialMoves(game: Game) : List<Move> {
 
         // Board is empty, return a move in the middle of the board
-        if (!game.field.hasMoves()) {
+        if (game.field.getMoves().isEmpty()) {
             val moves: MutableList<Move> = ArrayList()
             moves.add(Move(game.field.height / 2, game.field.width / 2))
             return moves
@@ -253,7 +285,6 @@ object GameBot {
                 }
             }
         }
-
 
         // Sort based on move score
         scoredMoves.sortBy { it.score }
