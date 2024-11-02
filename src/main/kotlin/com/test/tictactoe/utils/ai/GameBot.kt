@@ -15,6 +15,22 @@ object GameBot {
 
     private val logger = java.util.logging.Logger.getLogger("GameBot")
 
+
+
+    private var timeGetPotentialMoves = 0L // TODO
+
+
+    private var timeNegamax = 0L // TODO
+
+
+    private var timePatternFinding = 0L // TODO
+    private var timeGrabClosestMomve = 0L // TODO
+
+    private var timeAdjacent = 0L // TODO
+    private var timeEvaluateAdjacent = 0L // TODO
+
+
+
     private fun printPerformanceInfo() {
         logger.info(
             "scenario counted: ${this.handledScenarioCount}"
@@ -22,6 +38,14 @@ object GameBot {
         logger.info(
             "time: " + (System.currentTimeMillis() - this.startTime)
         )
+
+
+        logger.info("all get potential moves time: $timeGetPotentialMoves") // TODO
+        logger.info("all negamax time: $timeNegamax") // TODO
+        logger.info("all pattern finding time: $timePatternFinding") // TODO
+        logger.info("all grab closest moves time: $timeGrabClosestMomve") // TODO
+        logger.info("all adjacent check time: $timeAdjacent") // TODO
+        logger.info("all evaluate adjacent cell time: $timeEvaluateAdjacent") // TODO
     }
 
     private fun printSearchInfo(bestMove: Move, score: Int, depth: Int) {
@@ -63,6 +87,9 @@ object GameBot {
         for (move in moves) {
             game.makeMove(move)
 
+            val startTimeNegamax = System.currentTimeMillis() // TODO
+
+
             val score = -negamax(
                 game,
                 move,
@@ -70,6 +97,10 @@ object GameBot {
                 -beta,
                 -alpha
             )
+
+            timeNegamax += System.currentTimeMillis() - startTimeNegamax // TODO
+
+
             scoredMoves.add(
                 ScoredMove(
                     move = move,
@@ -228,6 +259,8 @@ object GameBot {
 
     private fun getSortedPotentialMoves(game: Game) : List<Move> {
 
+        val startTimeGPM = System.currentTimeMillis() // TODO
+
         // Board is empty, return a move in the middle of the board
         if (game.field.getMoves().isEmpty()) {
             val moves: MutableList<Move> = ArrayList()
@@ -235,10 +268,20 @@ object GameBot {
             return moves
         }
 
+
+        var startTimePF = System.currentTimeMillis() // TODO
+
         val threatResponses: List<Move> = getThreatResponses(game)
         if (threatResponses.isNotEmpty()) {
             return threatResponses
         }
+
+        timePatternFinding += System.currentTimeMillis() - startTimePF // TODO
+
+
+
+        var startTimeGCM = System.currentTimeMillis() // TODO
+
 
         val scoredMoves = mutableListOf<ScoredMove>()
 
@@ -247,8 +290,17 @@ object GameBot {
         for (y in 0 until game.field.height) {
             for (x in 0 until game.field.width) {
                 if (game.field.field[y][x] == null) {
-                    if (game.field.hasAdjacent(x, y)) {
+
+                    val startTimeAdjacent = System.currentTimeMillis()
+                    val has = game.field.hasAdjacent(x, y) // TODO
+                    timeAdjacent += System.currentTimeMillis() - startTimeAdjacent // TODO
+
+                    if (has) { // TODO
+
+                        val startTimeEvaluateAdjacent = System.currentTimeMillis() // TODO
                         val score: Int = Evaluator.evaluateCell(game.field, x, y, game.currentMove)
+                        timeEvaluateAdjacent += System.currentTimeMillis() - startTimeEvaluateAdjacent // TODO
+
                         scoredMoves.add(ScoredMove(Move(x, y), score))
                     }
                 }
@@ -260,6 +312,12 @@ object GameBot {
         for (scoredMove in scoredMoves) {
             moves.add(scoredMove.move)
         }
+
+
+        timeGrabClosestMomve += System.currentTimeMillis() - startTimeGCM // TODO
+
+
+        timeGetPotentialMoves += System.currentTimeMillis() - startTimeGPM // TODO
 
         return moves.toList()
     }
