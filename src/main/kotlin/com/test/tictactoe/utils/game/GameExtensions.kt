@@ -4,6 +4,7 @@ import com.test.tictactoe.controller.game.response.GameCreateResponse
 import com.test.tictactoe.controller.game.response.GameStateResponse
 import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Game
+import com.test.tictactoe.utils.switch
 
 fun Game.toCreateResponse(): GameCreateResponse =
     GameCreateResponse(
@@ -29,5 +30,13 @@ fun Game.toGameStateResponse(): GameStateResponse {
 }
 
 fun Game.changeCurrentMove() {
-    this.currentMove = GameSymbol.entries[(this.currentMove.ordinal + 1) % GameSymbol.entries.size]
+    this.currentMove = this.currentMove.switch()
+}
+
+fun Game.getCurrentMoveSymbol() : GameSymbol {
+    return this.currentMove
+}
+
+fun Game.getNonCurrentMoveSymbol() : GameSymbol {
+    return if(this.getCurrentMoveSymbol() == this.ownerSymbol) this.memberSymbol else this.ownerSymbol
 }

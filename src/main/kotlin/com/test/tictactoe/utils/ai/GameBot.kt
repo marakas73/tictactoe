@@ -1,15 +1,15 @@
 package com.test.tictactoe.utils.ai
 
 import com.test.tictactoe.model.Game
-import com.test.tictactoe.utils.game.Move
-import com.test.tictactoe.utils.game.changeCurrentMove
-import com.test.tictactoe.utils.game.getWinner
+import com.test.tictactoe.utils.game.*
 import com.test.tictactoe.utils.hasAdjacent
+import com.test.tictactoe.utils.hasMoves
+import java.util.HashSet
 import kotlin.math.max
 import kotlin.math.min
 
 object GameBot {
-    private const val DEFAULT_MAX_DEPTH = 3
+    private const val DEFAULT_MAX_DEPTH = 2
 
     fun getOptimalMove(
         game: Game,
@@ -127,22 +127,117 @@ object GameBot {
         }
     }
 
+    private fun getThreatResponses(game: Game): List<Move> {
+        val playerSymbol = game.getCurrentMoveSymbol()
+        val opponentSymbol = game.getNonCurrentMoveSymbol()
+
+        val fours = HashSet<Move>()
+        val threes = HashSet<Move>()
+        val refutations = HashSet<Move>()
+
+        val opponentFours = HashSet<Move>()
+        val opponentThrees = HashSet<Move>()
+        val opponentRefutations = HashSet<Move>()
+
+        // Check for threats first and respond to them if they exist
+        val field = game.field.field
+        for (y in game.field.field.indices) {
+            for (x in game.field.field[y].indices) {
+                if (field[y][x] == opponentSymbol) {
+                    opponentFours.addAll(
+                        ThreatUtils.getFours(
+                            game.field,
+                            x,
+                            y,
+                            opponentSymbol
+                        )
+                    )
+                    opponentThrees.addAll(
+                        ThreatUtils.getThrees(
+                            game.field,
+                            x,
+                            y,
+                            opponentSymbol
+                        )
+                    )
+                    opponentRefutations.addAll(
+                        ThreatUtils.getRefutations(
+                            game.field,
+                            x,
+                            y,
+                            opponentSymbol
+                        )
+                    )
+                } else if (field[y][x] == playerSymbol) {
+                    fours.addAll(
+                        ThreatUtils.getFours(
+                            game.field,
+                            x,
+                            y,
+                            playerSymbol
+                        )
+                    )
+                    threes.addAll(
+                        ThreatUtils.getThrees(
+                            game.field,
+                            x,
+                            y,
+                            playerSymbol
+                        )
+                    )
+                    refutations.addAll(
+                        ThreatUtils.getRefutations(
+                            game.field,
+                            x,
+                            y,
+                            playerSymbol
+                        )
+                    )
+                }
+            }
+        }
+
+        // We have a four on the board, play it
+        if (fours.isNotEmpty()) {
+            return fours.toList()
+        }
+
+        // Opponent has a four, defend against it
+        if (opponentFours.isNotEmpty()) {
+            return opponentFours.toList()
+        }
+
+        // We have a three that we can play to win.
+        // Either we play the three and win, or our opponent has a refutation
+        // that leads to their win. So we only consider our three and the
+        // opponents refutations.
+        if (threes.isNotEmpty()) {
+            threes.addAll(opponentRefutations)
+            return threes.toList()
+        }
+
+        // Opponent has a three, defend against it and add refutation moves
+        if (opponentThrees.isNotEmpty()) {
+            opponentThrees.addAll(refutations)
+            return opponentThrees.toList()
+        }
+
+        return listOf()
+    }
+
     private fun getSortedPotentialMoves(game: Game) : List<Move> {
-/*
 
-          // Board is empty, return a move in the middle of the board
-          if (state.getMoves() === 0) {
-              val moves: MutableList<Move> = ArrayList()
-              moves.add(Move(state.board.length / 2, state.board.length / 2))
-              return moves
-          }
+        // Board is empty, return a move in the middle of the board
+        if (!game.field.hasMoves()) {
+            val moves: MutableList<Move> = ArrayList()
+            moves.add(Move(game.field.height / 2, game.field.width / 2))
+            return moves
+        }
 
-          val threatResponses: List<Move> = getThreatResponses(state)
-          if (!threatResponses.isEmpty()) {
-              return threatResponses
-          }
-
-*/
+        val threatResponses: List<Move> = getThreatResponses(game)
+        if (threatResponses.isNotEmpty()) {
+            return threatResponses
+        }
 
         val scoredMoves = mutableListOf<ScoredMove>()
 

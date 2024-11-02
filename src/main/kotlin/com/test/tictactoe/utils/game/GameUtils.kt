@@ -51,27 +51,6 @@ fun isWithinBounds(field: Field, x: Int, y: Int): Boolean {
     return x in 0 until field.width && y in 0 until field.height
 }
 
-fun countEmptyCells(field: List<MutableList<GameSymbol?>>): Int {
-    return field.sumOf { list -> list.count { it == null } }
-}
-
-fun getPossibleMoves(game: Game): List<Pair<Int, Int>> {
-    val possibleMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-
-    for (y in 0 until game.field.height) {
-        for (x in 0 until game.field.width) {
-            if (game.field.field[y][x] == null) {
-                possibleMoves.add(Pair(x, y))
-            }
-        }
-    }
-
-    return possibleMoves.toList()
-}
-
-fun getPlayerSymbol(game: Game, isBot: Boolean): GameSymbol =
-    if (isBot) game.memberSymbol else game.ownerSymbol
-
 fun getWinner(game: Game, lastMove: Move): GameSymbol? {
     return when {
         isWinningMove(game, game.ownerSymbol, lastMove) -> game.ownerSymbol
