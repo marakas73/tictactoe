@@ -9,7 +9,7 @@ import com.test.tictactoe.exception.throwCannotGetUserRatingPlaceException
 import com.test.tictactoe.exception.throwForbidden
 import com.test.tictactoe.service.TokenService
 import com.test.tictactoe.service.UserService
-import com.test.tictactoe.utils.toGameRecordDTO
+import com.test.tictactoe.utils.game.toGameRecordDTO
 import com.test.tictactoe.utils.toUserInfoResponse
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader

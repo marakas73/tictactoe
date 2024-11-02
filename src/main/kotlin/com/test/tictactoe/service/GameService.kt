@@ -10,7 +10,8 @@ import com.test.tictactoe.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
-import com.test.tictactoe.utils.*
+import com.test.tictactoe.utils.ai.GameBot
+import com.test.tictactoe.utils.game.*
 
 @Service
 class GameService (
@@ -157,10 +158,10 @@ class GameService (
         game.field.field[y][x] = playerMoveSymbol
 
         val newGameStatus = when {
-            isWinningMove(game, playerMoveSymbol, x, y) -> handleWin(game)
+            isWinningMove(game, playerMoveSymbol, Move(x, y)) -> handleWin(game)
             isDraw(game) -> handleDraw(game)
             else -> {
-                changeCurrentMove(game)
+                game.changeCurrentMove()
 
                 if(game.isGameWithBot) {
                     val move: Pair<Int, Int> = GameBot.getOptimalMove(game)
@@ -188,10 +189,10 @@ class GameService (
         game.field.field[y][x] = game.currentMove
 
         return when {
-            isWinningMove(game, game.currentMove, x, y) -> handleWin(game)
+            isWinningMove(game, game.currentMove, Move(x, y)) -> handleWin(game)
             isDraw(game) -> handleDraw(game)
             else -> {
-                changeCurrentMove(game)
+                game.changeCurrentMove()
                 GameStatus.IN_PROGRESS
             }
         }
