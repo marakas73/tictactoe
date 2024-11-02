@@ -1,5 +1,6 @@
 package com.test.tictactoe.utils
 
+import com.test.tictactoe.enum.Directions
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.utils.game.Cell
 import com.test.tictactoe.utils.game.Direction
@@ -9,20 +10,17 @@ import com.test.tictactoe.utils.game.isWithinBounds
 fun Field.getDirection(
     startX: Int,
     startY: Int,
-    fromDeltaX: Int,
-    fromDeltaY: Int,
-    toDeltaX: Int,
-    toDeltaY: Int,
+    direction: Directions,
     oneSideLength: Int = 5
 ) : Direction {
-    var currentX = startX + fromDeltaX * (oneSideLength - 1)
-    var currentY = startY + fromDeltaY * (oneSideLength - 1)
+    var currentX = startX + direction.fromDeltaX * (oneSideLength - 1)
+    var currentY = startY + direction.fromDeltaY * (oneSideLength - 1)
     var centerIndex = 0
     var index = -1
 
     val sequence = mutableListOf<Cell>()
-    while(((currentX != startX + toDeltaX * oneSideLength) || toDeltaX == 0)
-        && ((currentY != startY + toDeltaY * oneSideLength) || toDeltaY == 0)
+    while(((currentX != startX + direction.toDeltaX * oneSideLength) || direction.toDeltaX == 0)
+        && ((currentY != startY + direction.toDeltaY * oneSideLength) || direction.toDeltaY == 0)
     ) {
         if(isWithinBounds(this, currentX, currentY)) {
             sequence.add(Cell(currentX, currentY, this.field[currentY][currentX]))
@@ -33,8 +31,8 @@ fun Field.getDirection(
             }
         }
 
-        currentX += toDeltaX
-        currentY += toDeltaY
+        currentX += direction.toDeltaX
+        currentY += direction.toDeltaY
     }
 
     return Direction(
@@ -48,51 +46,26 @@ fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direc
 
     directions.add(this.getDirection(fromX,
         fromY,
-        0,
-        -1,
-        0,
-        1,
+        Directions.VERTICAL,
         length)
-    )  // Up - Down
+    )
     directions.add(this.getDirection(fromX,
         fromY,
-        1,
-        0,
-        -1,
-        0,
+        Directions.HORIZONTAL,
         length)
-    )   // Right - Left
+    )
     directions.add(this.getDirection(fromX,
         fromY,
-        1,
-        -1,
-        -1,
-        1,
+        Directions.MAIN_DIAGONAL,
         length)
-    )  // Right-Up - Left-Down
+    )
     directions.add(this.getDirection(fromX,
         fromY,
-        -1,
-        -1,
-        1,
-        1,
+        Directions.SECONDARY_DIAGONAL,
         length)
-    ) // Left-Up - Right-Down
+    )
 
     return directions.toList()
-}
-
-fun Field.hasAdjacent(x: Int, y: Int, distance: Int = 2) : Boolean {
-    for(direction in this.getAllDirections(x, y)) {
-        for(i in 1.. distance) {
-            if(direction.sequence.getOrNull(direction.centerIndex + i)?.symbol != null
-                || direction.sequence.getOrNull(direction.centerIndex - i)?.symbol != null) {
-                return true
-            }
-        }
-    }
-
-    return false
 }
 
 fun Field.getMoves() : List<Move> {
@@ -125,4 +98,10 @@ fun Field.getMovesToEmptyCells() : List<Move> {
     }
 
     return moves.toList()
+}
+
+fun Field.updatedDirection(direction: Direction) : Direction {
+    direction.sequence = direction.sequence.map { Cell(it.x, it.y, this.field[it.y][it.x]) }
+
+    return direction
 }

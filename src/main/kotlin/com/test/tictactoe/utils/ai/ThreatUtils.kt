@@ -3,8 +3,10 @@ package com.test.tictactoe.utils.ai
 import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.utils.game.Cell
+import com.test.tictactoe.utils.game.Direction
 import com.test.tictactoe.utils.game.Move
 import com.test.tictactoe.utils.getAllDirections
+import com.test.tictactoe.utils.updatedDirection
 
 internal object ThreatUtils {
     private val REFUTATIONS: MutableList<ThreatPattern> = ArrayList()
@@ -30,35 +32,35 @@ internal object ThreatUtils {
     }
 
 
-    fun getThrees(field: Field, x: Int, y: Int, symbol: GameSymbol): List<Move> {
-        return getThreatMoves(THREES, field, x, y, symbol)
+    fun getThrees(field: Field, directions: List<Direction>, symbol: GameSymbol): List<Move> {
+        return getThreatMoves(THREES, field, directions, symbol)
     }
 
 
-    fun getFours(field: Field, x: Int, y: Int, symbol: GameSymbol): List<Move> {
-        return getThreatMoves(FOURS, field, x, y, symbol)
+    fun getFours(field: Field, directions: List<Direction>, symbol: GameSymbol): List<Move> {
+        return getThreatMoves(FOURS, field, directions, symbol)
     }
 
 
-    fun getRefutations(field: Field, x: Int, y: Int, symbol: GameSymbol): List<Move> {
-        return getThreatMoves(REFUTATIONS, field, x, y, symbol)
+    fun getRefutations(field: Field, directions: List<Direction>, symbol: GameSymbol): List<Move> {
+        return getThreatMoves(REFUTATIONS, field, directions, symbol)
     }
 
     private fun getThreatMoves(
         patternList: List<ThreatPattern>,
         field: Field,
-        x: Int,
-        y: Int,
+        directions: List<Direction>,
         playerSymbol: GameSymbol
     ): List<Move> {
         val threatMoves = mutableListOf<Move>()
         // Loop around the field in every direction
         // (diagonal/horizontal/vertical)
-        for (direction in field.getAllDirections(x, y)) {
+        for (direction in directions) {
             for (pattern in patternList) {
                 // Try to find the pattern
+
                 val patternIndex = matchPattern(
-                    direction.sequence,
+                    field.updatedDirection(direction).sequence,
                     pattern.getPattern(playerSymbol)
                 )
                 if (patternIndex != -1) {
