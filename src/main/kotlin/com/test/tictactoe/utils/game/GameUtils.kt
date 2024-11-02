@@ -16,25 +16,25 @@ fun isDraw(game: Game): Boolean {
     return !game.field.field.any { innerList -> innerList.contains(null) }
 }
 
-fun isWinningMove(game: Game, currentMoveSymbol: GameSymbol, move: Move): Boolean {
-    return (countDirection(game, currentMoveSymbol, move.x, move.y, 1, 0)
-            + countDirection(game, currentMoveSymbol, move.x, move.y, -1, 0) + 1 >= game.needToWin)
-            || (countDirection(game, currentMoveSymbol, move.x, move.y, 0, -1)
-            + countDirection(game, currentMoveSymbol, move.x, move.y, 0, 1) + 1 >= game.needToWin)
-            || (countDirection(game, currentMoveSymbol, move.x, move.y, -1, -1)
-            + countDirection(game, currentMoveSymbol, move.x, move.y, 1, 1) + 1 >= game.needToWin)
-            || (countDirection(game, currentMoveSymbol, move.x, move.y, -1, 1)
-            + countDirection(game, currentMoveSymbol, move.x, move.y, 1, -1) + 1 >= game.needToWin)
+fun isWinningMove(game: Game, playerSymbol: GameSymbol, move: Move): Boolean {
+    return (countDirection(game, playerSymbol, move.x, move.y, 1, 0)
+            + countDirection(game, playerSymbol, move.x, move.y, -1, 0) + 1 >= game.needToWin)
+            || (countDirection(game, playerSymbol, move.x, move.y, 0, -1)
+            + countDirection(game, playerSymbol, move.x, move.y, 0, 1) + 1 >= game.needToWin)
+            || (countDirection(game, playerSymbol, move.x, move.y, -1, -1)
+            + countDirection(game, playerSymbol, move.x, move.y, 1, 1) + 1 >= game.needToWin)
+            || (countDirection(game, playerSymbol, move.x, move.y, -1, 1)
+            + countDirection(game, playerSymbol, move.x, move.y, 1, -1) + 1 >= game.needToWin)
 }
 
-fun countDirection(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int, deltaX: Int, deltaY: Int): Int {
+fun countDirection(game: Game, playerSymbol: GameSymbol, x: Int, y: Int, deltaX: Int, deltaY: Int): Int {
     var counter = 0 // Not including (x,y) symbol
     var currentX = x + deltaX
     var currentY = y + deltaY
 
     while (
         isWithinBounds(game.field, currentX, currentY)
-        && game.field.field[currentY][currentX] == currentMoveSymbol
+        && game.field.field[currentY][currentX] == playerSymbol
     ) {
         counter++
         if (counter == game.needToWin) {

@@ -128,8 +128,8 @@ class GameService (
 
         playerGame.status = GameStatus.IN_PROGRESS
         playerGame.status = if(playerGame.isGameWithBot && playerGame.currentMove == playerGame.memberSymbol) {
-            val move: Pair<Int, Int> = GameBot.getOptimalMove(playerGame)
-            handleMoveByBot(playerGame, playerGame.memberSymbol, move.first, move.second) ?: GameStatus.ABORTED
+            val move: Move = GameBot.getBestMove(playerGame)
+            handleMoveByBot(playerGame, playerGame.memberSymbol, move.x, move.y) ?: GameStatus.ABORTED
 
         } else GameStatus.IN_PROGRESS
 
@@ -164,8 +164,8 @@ class GameService (
                 game.changeCurrentMove()
 
                 if(game.isGameWithBot) {
-                    val move: Pair<Int, Int> = GameBot.getOptimalMove(game)
-                    handleMoveByBot(game, game.memberSymbol, move.first, move.second)
+                    val move: Move = GameBot.getBestMove(game)
+                    handleMoveByBot(game, game.memberSymbol, move.x, move.y)
                 } else GameStatus.IN_PROGRESS
             }
         }

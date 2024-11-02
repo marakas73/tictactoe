@@ -2,77 +2,122 @@ package com.test.tictactoe.utils.ai
 
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
-import com.test.tictactoe.utils.hasAdjacent
 import com.test.tictactoe.utils.getMoves
+import com.test.tictactoe.utils.hasAdjacent
 import kotlin.math.max
 import kotlin.math.min
 
 object GameBot {
-    private const val DEFAULT_MAX_DEPTH = 3
+    private const val START_DEPTH = 2
+    private const val END_DEPTH = 8
 
     private var handledScenarioCount = 0 // TODO
     private var startTime = 0L // TODO
 
-    fun getOptimalMove(
-        game: Game,
-        depth: Int = DEFAULT_MAX_DEPTH
-    ): Pair<Int, Int> {
+    fun getBestMove(game: Game): Move {
+        // Reset performance counts
+        this.handledScenarioCount = 0
+        this.startTime = System.currentTimeMillis()
 
+        // Run a depth increasing search
+        val bestMove = iterativeDeepening(game.getFullCopy(), START_DEPTH, END_DEPTH)
+        printPerformanceInfo()
+        return bestMove
+    }
 
-        startTime = System.currentTimeMillis() // TODO
+    private fun printPerformanceInfo() {
+        java.util.logging.Logger.getAnonymousLogger().info("\"scenario counted: \" + this.handledScenarioCount")
+        java.util.logging.Logger.getAnonymousLogger().info("time: " + (System.currentTimeMillis() - this.startTime))
+    }
 
+    private fun printSearchInfo(bestMove: Move, score: Int, depth: Int) {
+        java.util.logging.Logger.getAnonymousLogger().info(
+            "Depth: $depth, Evaluation: $score, Best move: (${bestMove.x} ${bestMove.y})"
+        )
+    }
 
-
-        val optimalMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-        var currentMaxMoveValue = Int.MIN_VALUE
-
-        val field = game.field.field
-        for (move in getSortedPotentialMoves(game)) {
-            // Temp move
-            field[move.y][move.x] = game.memberSymbol
-            game.changeCurrentMove()
-
-            val moveValue = minimax(
-                move.x,
-                move.y,
-                alpha = Int.MIN_VALUE,
-                beta = Int.MAX_VALUE,
-                isBotTurn = false,
-                depth = depth,
-                game = game
-            )
-
-            // Remove temp move
-            field[move.y][move.x] = null
-            game.changeCurrentMove()
-
-            if (moveValue > currentMaxMoveValue) {
-                currentMaxMoveValue = moveValue
-                optimalMoves.clear()
-                optimalMoves.add(Pair(move.x, move.y))
-            } else if (moveValue == currentMaxMoveValue) {
-                optimalMoves.add(Pair(move.x, move.y))
+    private fun iterativeDeepening(game: Game, startDepth: Int, endDepth: Int): Move {
+        var moves = getSortedPotentialMoves(game)
+        if (moves.size == 1) return moves[0]
+        for (i in startDepth..endDepth) {
+            try {
+                moves = getScoredMoves(game, moves, i)
+            } catch (e: InterruptedException) {
+                break
             }
         }
+        return moves[0]
+    }
 
-        println() // TODO
-        println("scenario count: " + handledScenarioCount) // TODO
-        println("time: " + (System.currentTimeMillis() - startTime)) // TODO
-        println() // TODO
+    private fun getScoredMoves(game: Game, moves: List<Move>, depth: Int): List<Move> {
+        val scoredMoves = mutableListOf<ScoredMove>()
+        var alpha = -11000
+        val beta = 11000
+        var best = Int.MIN_VALUE
 
+        for (move in moves) {
+            game.makeMove(move)
 
-        return if(optimalMoves.isNotEmpty()) {
+            val score = -negamax(
+                game,
+                move,
+                depth - 1,
+                -beta,
+                -alpha
+            )
+            scoredMoves.add(
+                ScoredMove(
+                    move = move,
+                    score = score
+                )
+            )
 
-
-            println() // TODO
-            println("OPTIMAL: " + optimalMoves) // TODO
-            println() // TODO
-
-
-
-            optimalMoves.random()
+            game.undoMove(move)
+            if (score > best) best = score
+            if (best > alpha) alpha = best
+            if (best >= beta) break
         }
-        else Pair(0, 0) // TODO
+
+        scoredMoves.sortByDescending { it.score }
+        printSearchInfo(scoredMoves[0].move, scoredMoves[0].score, depth)
+
+        return scoredMoves.map { it.move }
+    }
+
+    private fun negamax(
+        game: Game,
+        move: Move,
+        depth: Int,
+        alpha: Int,
+        beta: Int
+    ): Int {
+        var newAlpha = alpha
+        handledScenarioCount++
+
+        if (depth == 0 || getWinner(game, move) != null) {
+            return Evaluator.evaluateField(game, move, depth)
+        }
+
+        var value: Int
+        var best = Int.MIN_VALUE
+
+        val moves = getSortedPotentialMoves(game)
+
+        for (currentMove in moves) {
+
+            game.makeMove(currentMove)
+            value = -negamax(game, currentMove, depth - 1, -beta, -newAlpha)
+            game.undoMove(currentMove)
+
+            if (value > best) {
+                best = value
+            }
+            if (best > newAlpha) newAlpha = best
+            if (best >= beta) {
+                break
+            }
+        }
+        return best
     }
 
     private fun minimax(
@@ -91,7 +136,7 @@ object GameBot {
 
 
         if (depth == 0 || getWinner(game, Move(x, y)) != null) {
-            return Evaluator.evaluateState(game, Move(x, y), depth)
+            return Evaluator.evaluateField(game, Move(x, y), depth)
         }
 
         val field = game.field.field
@@ -160,7 +205,7 @@ object GameBot {
     }
 
     private fun getThreatResponses(game: Game): List<Move> {
-        val playerSymbol = game.getCurrentMoveSymbol()
+        val playerSymbol = game.currentMove
         val opponentSymbol = game.getNonCurrentMoveSymbol()
 
         val fours = HashSet<Move>()

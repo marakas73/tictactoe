@@ -4,6 +4,7 @@ import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.Move
+import com.test.tictactoe.utils.game.getNonCurrentMoveSymbol
 import com.test.tictactoe.utils.game.isWinningMove
 import com.test.tictactoe.utils.getAllDirections
 
@@ -45,9 +46,9 @@ object Evaluator {
         return score
     }
 
-    fun evaluateState(game: Game, lastMove: Move, depth: Int): Int {
-        val playerSymbol = game.currentMove
-        val opponentSymbol = if (playerSymbol == game.ownerSymbol) game.memberSymbol else game.ownerSymbol
+    fun evaluateField(game: Game, lastMove: Move, depth: Int): Int {
+        val playerSymbol = game.getNonCurrentMoveSymbol()
+        val opponentSymbol = game.currentMove
 
         // Check for a winning/losing position
         if (isWinningMove(game, playerSymbol, lastMove)) return 10000 + depth

@@ -33,10 +33,34 @@ fun Game.changeCurrentMove() {
     this.currentMove = this.currentMove.switch()
 }
 
-fun Game.getCurrentMoveSymbol() : GameSymbol {
-    return this.currentMove
+fun Game.getNonCurrentMoveSymbol() : GameSymbol {
+    return if(this.currentMove == this.ownerSymbol) this.memberSymbol else this.ownerSymbol
 }
 
-fun Game.getNonCurrentMoveSymbol() : GameSymbol {
-    return if(this.getCurrentMoveSymbol() == this.ownerSymbol) this.memberSymbol else this.ownerSymbol
+fun Game.getFullCopy() : Game {
+    return this.copy(
+        owner = this.owner.copy(),
+        member = this.member?.copy(),
+        field = this.field.copy(
+            field = this.field.field.map { it.toMutableList() }
+        ),
+    )
+}
+
+fun Game.makeMove(move: Move) : Boolean {
+    if(!isMoveValid(this.currentMove, this, move.x, move.y))
+        return false
+
+    this.field.field[move.y][move.x] = this.currentMove
+    this.changeCurrentMove()
+    return true
+}
+
+fun Game.undoMove(move: Move) : Boolean {
+    if(!isWithinBounds(this.field, move.x, move.y))
+        return false
+
+    this.field.field[move.y][move.x] = null
+    this.changeCurrentMove()
+    return true
 }
