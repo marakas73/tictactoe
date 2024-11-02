@@ -4,15 +4,31 @@ import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
 import com.test.tictactoe.utils.getMoves
 import com.test.tictactoe.utils.hasAdjacent
-import kotlin.math.max
-import kotlin.math.min
 
 object GameBot {
     private const val START_DEPTH = 2
     private const val END_DEPTH = 8
+    private const val TIME_LIMIT_MILLIS = 5000
 
-    private var handledScenarioCount = 0 // TODO
-    private var startTime = 0L // TODO
+    private var handledScenarioCount = 0
+    private var startTime = 0L
+
+    private val logger = java.util.logging.Logger.getLogger("GameBot")
+
+    private fun printPerformanceInfo() {
+        logger.info(
+            "scenario counted: ${this.handledScenarioCount}"
+        )
+        logger.info(
+            "time: " + (System.currentTimeMillis() - this.startTime)
+        )
+    }
+
+    private fun printSearchInfo(bestMove: Move, score: Int, depth: Int) {
+        logger.info(
+            "Depth: $depth, Evaluation: $score, Best move: (${bestMove.x} ${bestMove.y})"
+        )
+    }
 
     fun getBestMove(game: Game): Move {
         // Reset performance counts
@@ -23,17 +39,6 @@ object GameBot {
         val bestMove = iterativeDeepening(game.getFullCopy(), START_DEPTH, END_DEPTH)
         printPerformanceInfo()
         return bestMove
-    }
-
-    private fun printPerformanceInfo() {
-        java.util.logging.Logger.getAnonymousLogger().info("\"scenario counted: \" + this.handledScenarioCount")
-        java.util.logging.Logger.getAnonymousLogger().info("time: " + (System.currentTimeMillis() - this.startTime))
-    }
-
-    private fun printSearchInfo(bestMove: Move, score: Int, depth: Int) {
-        java.util.logging.Logger.getAnonymousLogger().info(
-            "Depth: $depth, Evaluation: $score, Best move: (${bestMove.x} ${bestMove.y})"
-        )
     }
 
     private fun iterativeDeepening(game: Game, startDepth: Int, endDepth: Int): Move {
@@ -80,7 +85,6 @@ object GameBot {
 
         scoredMoves.sortByDescending { it.score }
         printSearchInfo(scoredMoves[0].move, scoredMoves[0].score, depth)
-
         return scoredMoves.map { it.move }
     }
 
@@ -91,6 +95,10 @@ object GameBot {
         alpha: Int,
         beta: Int
     ): Int {
+        if (Thread.interrupted() || (System.currentTimeMillis() - startTime) > TIME_LIMIT_MILLIS) {
+            throw InterruptedException()
+        }
+
         var newAlpha = alpha
         handledScenarioCount++
 
@@ -118,90 +126,6 @@ object GameBot {
             }
         }
         return best
-    }
-
-    private fun minimax(
-        x: Int,
-        y: Int,
-        depth: Int,
-        alpha: Int,
-        beta: Int,
-        isBotTurn: Boolean,
-        game: Game
-    ): Int {
-
-
-        handledScenarioCount++ // TODO
-
-
-
-        if (depth == 0 || getWinner(game, Move(x, y)) != null) {
-            return Evaluator.evaluateField(game, Move(x, y), depth)
-        }
-
-        val field = game.field.field
-        if (isBotTurn) {
-            var maxEval = Int.MIN_VALUE
-
-            for(move in getSortedPotentialMoves(game)) {
-                // Temp move
-                field[move.y][move.x] = game.memberSymbol
-                game.changeCurrentMove()
-
-                val eval = minimax(
-                    x = move.x,
-                    y = move.y,
-                    depth = depth - 1,
-                    alpha = alpha,
-                    beta = beta,
-                    isBotTurn = false,
-                    game = game
-                )
-
-                // Remove temp move
-                field[move.y][move.x] = null
-                game.changeCurrentMove()
-
-                maxEval = max(maxEval, eval)
-
-                val newAlpha = max(alpha, eval)
-                /*if (beta <= newAlpha) {
-                    //return maxEval TODO
-                }*/
-            }
-
-            return maxEval
-        } else {
-            var minEval = Int.MAX_VALUE
-
-            for(move in getSortedPotentialMoves(game)) {
-                // Temp move
-                field[move.y][move.x] = game.ownerSymbol
-                game.changeCurrentMove()
-
-                val eval = minimax(
-                    x = move.x,
-                    y = move.y,
-                    depth = depth - 1,
-                    alpha = alpha,
-                    beta = beta,
-                    isBotTurn = true,
-                    game = game
-                )
-
-                // Remove temp move
-                field[move.y][move.x] = null
-                game.changeCurrentMove()
-
-                minEval = min(minEval, eval)
-                val newBeta = min(beta, eval)
-                /*if (newBeta <= alpha) {
-                    // return minEval TODO
-                }*/
-            }
-
-            return minEval
-        }
     }
 
     private fun getThreatResponses(game: Game): List<Move> {

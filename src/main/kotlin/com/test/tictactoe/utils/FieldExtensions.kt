@@ -17,7 +17,7 @@ fun Field.getDirection(
 ) : Direction {
     var currentX = startX + fromDeltaX * (oneSideLength - 1)
     var currentY = startY + fromDeltaY * (oneSideLength - 1)
-    var centerIndex: Int = 0
+    var centerIndex = 0
     var index = -1
 
     val sequence = mutableListOf<Cell>()
