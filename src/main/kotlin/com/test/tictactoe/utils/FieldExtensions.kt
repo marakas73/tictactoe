@@ -1,6 +1,7 @@
 package com.test.tictactoe.utils
 
 import com.test.tictactoe.model.Field
+import com.test.tictactoe.utils.ai.GameBot
 import com.test.tictactoe.utils.game.Cell
 import com.test.tictactoe.utils.game.Direction
 import com.test.tictactoe.utils.game.Move
@@ -31,6 +32,11 @@ fun Field.getDirection(
             if(currentX == startX && currentY == startY) {
                 centerIndex = index
             }
+        } else if (isWithinBounds(this, currentX - toDeltaX, currentY - toDeltaY)) {
+            return Direction(
+                sequence.toList(),
+                centerIndex,
+            )
         }
 
         currentX += toDeltaX
@@ -44,6 +50,9 @@ fun Field.getDirection(
 }
 
 fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direction> {
+
+    val startTime = System.currentTimeMillis() // TODO
+
     val directions = mutableListOf<Direction>()
 
     directions.add(this.getDirection(fromX,
@@ -79,11 +88,15 @@ fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direc
         length)
     ) // Left-Up - Right-Down
 
+
+    GameBot.timeGetDirections += System.currentTimeMillis() - startTime // TODO
+
+
     return directions.toList()
 }
 
 fun Field.hasAdjacent(x: Int, y: Int, distance: Int = 2) : Boolean {
-    for(direction in this.getAllDirections(x, y)) {
+    for(direction in this.getAllDirections(x, y, distance + 1)) {
         for(i in 1.. distance) {
             if(direction.sequence.getOrNull(direction.centerIndex + i)?.symbol != null
                 || direction.sequence.getOrNull(direction.centerIndex - i)?.symbol != null) {
@@ -125,4 +138,51 @@ fun Field.getMovesToEmptyCells() : List<Move> {
     }
 
     return moves.toList()
+}
+
+fun Field.countOccupiedCells() : Int {
+    var count = 0
+    for (row in this.field) {
+        for (symbol in row) {
+            if (symbol != null) {
+                count++
+            }
+        }
+    }
+    return count
+}
+
+fun Field.getPossibleMovesAdjacentToOccupiedCells(distance: Int) : List<Move> {
+    if(this.countOccupiedCells() < (this.width * this.height)) {
+        val movesHashSet = hashSetOf<Move>()
+
+        for(y in this.field.indices) {
+            for(x in this.field[y].indices) {
+                if(this.field[y][x] == null)
+                    continue
+
+                for(direction in this.getAllDirections(x, y, distance + 1)) {
+                    for(i in 1.. distance) {
+                        val el1 = direction.sequence.getOrNull(direction.centerIndex + i)
+                        val el2 = direction.sequence.getOrNull(direction.centerIndex - i)
+
+                        if(el1?.symbol == null && el1 != null) {
+                            movesHashSet.add(
+                                Move(el1.x, el1.y)
+                            )
+                        }
+                        if(el2?.symbol == null && el2 != null) {
+                            movesHashSet.add(
+                                Move(el2.x, el2.y)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        return movesHashSet.toList()
+    } else {
+        return listOf()
+    }
 }

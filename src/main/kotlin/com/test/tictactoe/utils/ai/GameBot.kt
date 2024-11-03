@@ -3,6 +3,7 @@ package com.test.tictactoe.utils.ai
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
 import com.test.tictactoe.utils.getMoves
+import com.test.tictactoe.utils.getPossibleMovesAdjacentToOccupiedCells
 import com.test.tictactoe.utils.hasAdjacent
 
 object GameBot {
@@ -29,6 +30,8 @@ object GameBot {
     private var timeAdjacent = 0L // TODO
     private var timeEvaluateAdjacent = 0L // TODO
 
+    var timeGetDirections = 0L // TODO
+
 
 
     private fun printPerformanceInfo() {
@@ -46,6 +49,7 @@ object GameBot {
         logger.info("all grab closest moves time: $timeGrabClosestMomve") // TODO
         logger.info("all adjacent check time: $timeAdjacent") // TODO
         logger.info("all evaluate adjacent cell time: $timeEvaluateAdjacent") // TODO
+        logger.info("all get all directions time: $timeGetDirections") // TODO
     }
 
     private fun printSearchInfo(bestMove: Move, score: Int, depth: Int) {
@@ -286,7 +290,7 @@ object GameBot {
         val scoredMoves = mutableListOf<ScoredMove>()
 
         // Grab closest moves
-        val moves = mutableListOf<Move>()
+        /*val moves = mutableListOf<Move>()
         for (y in 0 until game.field.height) {
             for (x in 0 until game.field.width) {
                 if (game.field.field[y][x] == null) {
@@ -305,6 +309,14 @@ object GameBot {
                     }
                 }
             }
+        }*/
+
+
+        val moves = mutableListOf<Move>()
+        for(move in game.field.getPossibleMovesAdjacentToOccupiedCells(2)) {
+            val score: Int = Evaluator.evaluateCell(game.field, move.x, move.y, game.currentMove)
+
+            scoredMoves.add(ScoredMove(move, score))
         }
 
         // Sort based on move score
