@@ -1,12 +1,9 @@
 package com.test.tictactoe.utils.ai
 
-import com.test.tictactoe.enum.Directions
-import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
-import com.test.tictactoe.utils.getAllDirections
-import com.test.tictactoe.utils.getDirection
 import com.test.tictactoe.utils.getMoves
+import com.test.tictactoe.utils.hasAdjacent
 
 object GameBot {
     private const val START_DEPTH = 2
@@ -31,10 +28,6 @@ object GameBot {
 
     private var timeAdjacent = 0L // TODO
     private var timeEvaluateAdjacent = 0L // TODO
-
-
-
-    private val directions: HashMap<Long, Array<Array<Array<Direction>>>> = hashMapOf() // TODO
 
 
 
@@ -65,43 +58,6 @@ object GameBot {
         // Reset performance counts
         this.handledScenarioCount = 0
         this.startTime = System.currentTimeMillis()
-
-        if(!directions.containsKey(game.id)) { // TODO
-
-            directions[game.id] = Array(game.field.width) {
-                Array(game.field.height) {
-                    Array<Direction>(4) {
-                        Direction(listOf(), 0)
-                    }
-                }
-            }
-
-            for(x in 0 until game.field.width) {
-                for(y in 0 until  game.field.height) {
-                    directions[game.id]?.get(x)?.get(y)?.set(0, game.field.getDirection(
-                        x,
-                        y,
-                        Directions.VERTICAL
-                    ))
-                    directions[game.id]?.get(x)?.get(y)?.set(1, game.field.getDirection(
-                        x,
-                        y,
-                        Directions.HORIZONTAL
-                    ))
-                    directions[game.id]?.get(x)?.get(y)?.set(2, game.field.getDirection(
-                        x,
-                        y,
-                        Directions.MAIN_DIAGONAL
-                    ))
-                    directions[game.id]?.get(x)?.get(y)?.set(3, game.field.getDirection(
-                        x,
-                        y,
-                        Directions.SECONDARY_DIAGONAL
-                    ))
-                }
-            }
-        }
-
 
         // Run a depth increasing search
         val bestMove = iterativeDeepening(game.getFullCopy(), START_DEPTH, END_DEPTH)
@@ -223,21 +179,24 @@ object GameBot {
                     opponentFours.addAll(
                         ThreatUtils.getFours(
                             game.field,
-                            directions[game.id]?.get(x)?.get(y)!!.toList(),
+                            x,
+                            y,
                             opponentSymbol
                         )
                     )
                     opponentThrees.addAll(
                         ThreatUtils.getThrees(
                             game.field,
-                            directions[game.id]?.get(x)?.get(y)!!.toList(),
+                            x,
+                            y,
                             opponentSymbol
                         )
                     )
                     opponentRefutations.addAll(
                         ThreatUtils.getRefutations(
                             game.field,
-                            directions[game.id]?.get(x)?.get(y)!!.toList(),
+                            x,
+                            y,
                             opponentSymbol
                         )
                     )
@@ -245,21 +204,24 @@ object GameBot {
                     fours.addAll(
                         ThreatUtils.getFours(
                             game.field,
-                            directions[game.id]?.get(x)?.get(y)!!.toList(),
+                            x,
+                            y,
                             playerSymbol
                         )
                     )
                     threes.addAll(
                         ThreatUtils.getThrees(
                             game.field,
-                            directions[game.id]?.get(x)?.get(y)!!.toList(),
+                            x,
+                            y,
                             playerSymbol
                         )
                     )
                     refutations.addAll(
                         ThreatUtils.getRefutations(
                             game.field,
-                            directions[game.id]?.get(x)?.get(y)!!.toList(),
+                            x,
+                            y,
                             playerSymbol
                         )
                     )
@@ -330,7 +292,7 @@ object GameBot {
                 if (game.field.field[y][x] == null) {
 
                     val startTimeAdjacent = System.currentTimeMillis()
-                    val has = hasAdjacent(game.id, game.field, x, y) // TODO
+                    val has = game.field.hasAdjacent(x, y) // TODO
                     timeAdjacent += System.currentTimeMillis() - startTimeAdjacent // TODO
 
                     if (has) { // TODO
@@ -358,18 +320,5 @@ object GameBot {
         timeGetPotentialMoves += System.currentTimeMillis() - startTimeGPM // TODO
 
         return moves.toList()
-    }
-
-    private fun hasAdjacent(gameId: Long, field: Field, x: Int, y: Int, distance: Int = 2) : Boolean {
-        for(direction in directions[gameId]?.get(x)?.get(y)!!.toList()) {
-            for(i in 1.. distance) {
-                if(direction.sequence.getOrNull(direction.centerIndex + i)?.symbol != null
-                    || direction.sequence.getOrNull(direction.centerIndex - i)?.symbol != null) {
-                    return true
-                }
-            }
-        }
-
-        return false
     }
 }

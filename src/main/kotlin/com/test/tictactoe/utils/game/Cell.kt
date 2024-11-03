@@ -5,5 +5,5 @@ import com.test.tictactoe.enum.GameSymbol
 data class Cell(
     val x: Int,
     val y: Int,
-    var symbol: GameSymbol?,
+    val symbol: GameSymbol?,
 )
