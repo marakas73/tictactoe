@@ -3,6 +3,7 @@ package com.test.tictactoe.utils.ai
 import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
+import com.test.tictactoe.utils.game.Direction
 import com.test.tictactoe.utils.game.Move
 import com.test.tictactoe.utils.game.getNonCurrentMoveSymbol
 import com.test.tictactoe.utils.game.isWinningMove
@@ -11,18 +12,18 @@ import com.test.tictactoe.utils.getAllDirections
 object Evaluator {
     private val SCORES = intArrayOf(19, 15, 11, 7, 3)
 
-    private fun scoreDirection(direction: List<GameSymbol?>, symbol: GameSymbol): Int {
+    private fun scoreDirection(direction: Direction, symbol: GameSymbol): Int {
         var score = 0
 
         // Pass a window of 5 across the field array
         var i = 0
-        while ((i + 4) < direction.size) {
+        while ((i + 4) < direction.sequence.size) {
             var empty = 0
             var stones = 0
             for (j in 0..4) {
-                if (direction[i + j] == null) {
+                if (direction.sequence[i + j].symbol == null) {
                     empty++
-                } else if (direction[i + j] == symbol) {
+                } else if (direction.sequence[i + j].symbol == symbol) {
                     stones++
                 } else {
                     // Opponent stone in this window, can't form a five
@@ -47,8 +48,8 @@ object Evaluator {
     }
 
     fun evaluateField(game: Game, lastMove: Move, depth: Int): Int {
-        val playerSymbol = game.getNonCurrentMoveSymbol()
-        val opponentSymbol = game.currentMove
+        val playerSymbol = game.currentMove
+        val opponentSymbol = game.getNonCurrentMoveSymbol()
 
         // Check for a winning/losing position
         if (isWinningMove(game, playerSymbol, lastMove)) return 10000 + depth
@@ -74,7 +75,7 @@ object Evaluator {
         var score = 0
 
         for (direction in field.getAllDirections(x, y)) {
-            score += scoreDirection(direction.sequence.map { it.symbol }, symbol)
+            score += scoreDirection(direction, symbol)
         }
 
         return score

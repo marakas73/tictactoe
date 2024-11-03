@@ -16,19 +16,12 @@ object GameBot {
     private val logger = java.util.logging.Logger.getLogger("GameBot")
 
 
-
     private var timeGetPotentialMoves = 0L // TODO
-
-
     private var timeNegamax = 0L // TODO
-
-
     private var timePatternFinding = 0L // TODO
     private var timeGrabClosestMomve = 0L // TODO
-
     private var timeAdjacent = 0L // TODO
     private var timeEvaluateAdjacent = 0L // TODO
-
 
 
     private fun printPerformanceInfo() {
@@ -67,10 +60,15 @@ object GameBot {
 
     private fun iterativeDeepening(game: Game, startDepth: Int, endDepth: Int): Move {
         var moves = getSortedPotentialMoves(game)
+
+        println("sorted potential moves: $moves") // TODO
+
         if (moves.size == 1) return moves[0]
         for (i in startDepth..endDepth) {
             try {
                 moves = getScoredMoves(game, moves, i)
+
+                println("scored moves on depth $i : $moves") // TODO
             } catch (e: InterruptedException) {
                 break
             }
@@ -308,7 +306,7 @@ object GameBot {
         }
 
         // Sort based on move score
-        scoredMoves.sortBy { it.score }
+        scoredMoves.sortBy { it.score } // TODO why not descending order
         for (scoredMove in scoredMoves) {
             moves.add(scoredMove.move)
         }
