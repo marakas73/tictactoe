@@ -3,11 +3,7 @@ package com.test.tictactoe.utils.ai
 import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
-import com.test.tictactoe.utils.game.Direction
-import com.test.tictactoe.utils.game.Move
-import com.test.tictactoe.utils.game.getNonCurrentMoveSymbol
-import com.test.tictactoe.utils.game.isWinningMove
-import com.test.tictactoe.utils.getAllDirections
+import com.test.tictactoe.utils.game.*
 
 object Evaluator {
     private val SCORES = intArrayOf(19, 15, 11, 7, 3)
@@ -47,13 +43,14 @@ object Evaluator {
         return score
     }
 
-    fun evaluateField(game: Game, lastMove: Move, depth: Int): Int {
-        val playerSymbol = game.currentMove
-        val opponentSymbol = game.getNonCurrentMoveSymbol()
+    fun evaluateState(game: Game, lastMove: Move, depth: Int): Int {
+        val playerSymbol = game.getNonCurrentMoveSymbol()
+        val opponentSymbol = game.currentMove
 
         // Check for a winning/losing position
-        if (isWinningMove(game, playerSymbol, lastMove)) return 10000 + depth
-        if (isWinningMove(game, opponentSymbol, lastMove)) return -10000 - depth
+        val winner = getWinner(game, lastMove)
+        if (winner == playerSymbol) return 10000 + depth
+        if (winner == opponentSymbol) return -10000 - depth
 
         // Evaluate each field separately, subtracting from the score if the
         // field belongs to the opponent, adding if it belongs to the player

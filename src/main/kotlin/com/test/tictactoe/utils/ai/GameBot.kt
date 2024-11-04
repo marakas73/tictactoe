@@ -3,7 +3,6 @@ package com.test.tictactoe.utils.ai
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
 import com.test.tictactoe.utils.getMoves
-import com.test.tictactoe.utils.hasAdjacent
 
 object GameBot {
     private const val START_DEPTH = 2
@@ -306,6 +305,7 @@ object GameBot {
         }
 
         // Sort based on move score
+        scoredMoves.sortByDescending { it.score }
         scoredMoves.sortBy { it.score } // TODO why not descending order
         for (scoredMove in scoredMoves) {
             moves.add(scoredMove.move)
