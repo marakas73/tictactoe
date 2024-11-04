@@ -9,7 +9,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 object GameBot {
-    private const val DEFAULT_MAX_DEPTH = 3
+    private const val DEFAULT_MAX_DEPTH = 2
 
     fun getOptimalMove(
         game: Game,
@@ -46,6 +46,8 @@ object GameBot {
                 optimalMoves.add(Pair(move.x, move.y))
             }
         }
+
+        println("OPTIMAL: " + optimalMoves) // TODO
 
         return optimalMoves.random()
     }
@@ -159,12 +161,12 @@ object GameBot {
             }
         }
 
-
         // Sort based on move score
-        scoredMoves.sortBy { it.score }
+        scoredMoves.sortByDescending { it.score }
         for (scoredMove in scoredMoves) {
             moves.add(scoredMove.move)
         }
+
 
         return moves.toList()
     }
