@@ -13,16 +13,16 @@ fun Field.getDirection(
     fromDeltaY: Int,
     toDeltaX: Int,
     toDeltaY: Int,
-    oneSideLength: Int = 5
+    oneSideLength: Int = 4
 ) : Direction {
-    var currentX = startX + fromDeltaX * (oneSideLength - 1)
-    var currentY = startY + fromDeltaY * (oneSideLength - 1)
+    var currentX = startX + fromDeltaX * oneSideLength
+    var currentY = startY + fromDeltaY * oneSideLength
     var centerIndex = 0
     var index = -1
 
     val sequence = mutableListOf<Cell>()
-    while(((currentX != startX + toDeltaX * oneSideLength) || toDeltaX == 0)
-        && ((currentY != startY + toDeltaY * oneSideLength) || toDeltaY == 0)
+    while(((currentX != startX + toDeltaX * (oneSideLength + 1)) || toDeltaX == 0)
+        && ((currentY != startY + toDeltaY * (oneSideLength + 1)) || toDeltaY == 0)
     ) {
         if(isWithinBounds(this, currentX, currentY)) {
             sequence.add(Cell(currentX, currentY, this.field[currentY][currentX]))
@@ -43,7 +43,7 @@ fun Field.getDirection(
     )
 }
 
-fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direction> {
+fun Field.getAllDirections(fromX: Int, fromY: Int, oneSideLength: Int = 4) : List<Direction> {
     val directions = mutableListOf<Direction>()
 
     directions.add(this.getDirection(fromX,
@@ -52,7 +52,7 @@ fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direc
         -1,
         0,
         1,
-        length)
+        oneSideLength)
     )  // Up - Down
     directions.add(this.getDirection(fromX,
         fromY,
@@ -60,7 +60,7 @@ fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direc
         0,
         -1,
         0,
-        length)
+        oneSideLength)
     )   // Right - Left
     directions.add(this.getDirection(fromX,
         fromY,
@@ -68,7 +68,7 @@ fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direc
         -1,
         -1,
         1,
-        length)
+        oneSideLength)
     )  // Right-Up - Left-Down
     directions.add(this.getDirection(fromX,
         fromY,
@@ -76,14 +76,14 @@ fun Field.getAllDirections(fromX: Int, fromY: Int, length: Int = 5) : List<Direc
         -1,
         1,
         1,
-        length)
+        oneSideLength)
     ) // Left-Up - Right-Down
 
     return directions.toList()
 }
 
 fun Field.hasAdjacent(x: Int, y: Int, distance: Int = 2) : Boolean {
-    for(direction in this.getAllDirections(x, y)) {
+    for(direction in this.getAllDirections(x, y, distance)) {
         for(i in 1.. distance) {
             if(direction.sequence.getOrNull(direction.centerIndex + i)?.symbol != null
                 || direction.sequence.getOrNull(direction.centerIndex - i)?.symbol != null) {
@@ -105,22 +105,6 @@ fun Field.getMoves() : List<Move> {
                     Move(x, y)
                 )
             }
-        }
-    }
-
-    return moves.toList()
-}
-
-fun Field.getMovesToEmptyCells() : List<Move> {
-    val moves = mutableListOf<Move>()
-    for(y in this.field.indices) {
-        for(x in this.field[y].indices) {
-            if(this.field[y][x] != null)
-                continue
-
-            moves.add(
-                Move(x, y)
-            )
         }
     }
 

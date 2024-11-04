@@ -54,7 +54,7 @@ internal object ThreatUtils {
         val threatMoves = mutableListOf<Move>()
         // Loop around the field in every direction
         // (diagonal/horizontal/vertical)
-        for (direction in field.getAllDirections(x, y)) {
+        for (direction in field.getAllDirections(x, y, 5)) {
             for (pattern in patternList) {
                 // Try to find the pattern
                 val patternIndex = matchPattern(

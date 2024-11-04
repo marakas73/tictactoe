@@ -4,6 +4,7 @@ import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Field
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
+import com.test.tictactoe.utils.getAllDirections
 
 object Evaluator {
     private val SCORES = intArrayOf(19, 15, 11, 7, 3)
@@ -43,7 +44,7 @@ object Evaluator {
         return score
     }
 
-    fun evaluateState(game: Game, lastMove: Move, depth: Int): Int {
+    fun evaluateField(game: Game, lastMove: Move, depth: Int): Int {
         val playerSymbol = game.getNonCurrentMoveSymbol()
         val opponentSymbol = game.currentMove
 

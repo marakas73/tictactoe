@@ -3,10 +3,11 @@ package com.test.tictactoe.utils.ai
 import com.test.tictactoe.model.Game
 import com.test.tictactoe.utils.game.*
 import com.test.tictactoe.utils.getMoves
+import com.test.tictactoe.utils.hasAdjacent
 
 object GameBot {
     private const val START_DEPTH = 2
-    private const val END_DEPTH = 8
+    private const val END_DEPTH = 2
     private const val TIME_LIMIT_MILLIS = 5000
 
     private var handledScenarioCount = 0
@@ -14,13 +15,9 @@ object GameBot {
 
     private val logger = java.util.logging.Logger.getLogger("GameBot")
 
-
-    private var timeGetPotentialMoves = 0L // TODO
-    private var timeNegamax = 0L // TODO
-    private var timePatternFinding = 0L // TODO
-    private var timeGrabClosestMomve = 0L // TODO
-    private var timeAdjacent = 0L // TODO
-    private var timeEvaluateAdjacent = 0L // TODO
+    private var timeNegamax = 0L
+    private var timePatternFinding = 0L
+    private var timeGetSortedPotentialMoves = 0L
 
 
     private fun printPerformanceInfo() {
@@ -31,13 +28,9 @@ object GameBot {
             "time: " + (System.currentTimeMillis() - this.startTime)
         )
 
-
-        logger.info("all get potential moves time: $timeGetPotentialMoves") // TODO
-        logger.info("all negamax time: $timeNegamax") // TODO
-        logger.info("all pattern finding time: $timePatternFinding") // TODO
-        logger.info("all grab closest moves time: $timeGrabClosestMomve") // TODO
-        logger.info("all adjacent check time: $timeAdjacent") // TODO
-        logger.info("all evaluate adjacent cell time: $timeEvaluateAdjacent") // TODO
+        logger.info("all negamax time: $timeNegamax")
+        logger.info("all pattern finding time: $timePatternFinding")
+        logger.info("all grab closest moves time: $timeGetSortedPotentialMoves")
     }
 
     private fun printSearchInfo(bestMove: Move, score: Int, depth: Int) {
@@ -52,15 +45,20 @@ object GameBot {
         this.startTime = System.currentTimeMillis()
 
         // Run a depth increasing search
-        val bestMove = iterativeDeepening(game.getFullCopy(), START_DEPTH, END_DEPTH)
+        val bestMove = iterativeDeepening(game.getFullCopy())
         printPerformanceInfo()
         return bestMove
     }
 
-    private fun iterativeDeepening(game: Game, startDepth: Int, endDepth: Int): Move {
+    private fun iterativeDeepening(
+        game: Game,
+        startDepth: Int = START_DEPTH,
+        endDepth: Int = END_DEPTH
+    ): Move {
         var moves = getSortedPotentialMoves(game)
 
-        println("sorted potential moves: $moves") // TODO
+        println("sorted potential moves: ${moves}") // TODO
+        //println("sorted potential moves: ${moves.map { Evaluator.evaluateCell(game.field, it.x, it.y, game.memberSymbol) }.toList()}") // TODO
 
         if (moves.size == 1) return moves[0]
         for (i in startDepth..endDepth) {
@@ -83,10 +81,7 @@ object GameBot {
 
         for (move in moves) {
             game.makeMove(move)
-
-            val startTimeNegamax = System.currentTimeMillis() // TODO
-
-
+            val startTimeNegamax = System.currentTimeMillis()
             val score = -negamax(
                 game,
                 move,
@@ -94,9 +89,8 @@ object GameBot {
                 -beta,
                 -alpha
             )
-
-            timeNegamax += System.currentTimeMillis() - startTimeNegamax // TODO
-
+            timeNegamax += System.currentTimeMillis() - startTimeNegamax
+            game.undoMove(move)
 
             scoredMoves.add(
                 ScoredMove(
@@ -105,7 +99,6 @@ object GameBot {
                 )
             )
 
-            game.undoMove(move)
             if (score > best) best = score
             if (best > alpha) alpha = best
             if (best >= beta) break
@@ -255,8 +248,7 @@ object GameBot {
     }
 
     private fun getSortedPotentialMoves(game: Game) : List<Move> {
-
-        val startTimeGPM = System.currentTimeMillis() // TODO
+        val startTimeGetSortedPotentialMoves = System.currentTimeMillis()
 
         // Board is empty, return a move in the middle of the board
         if (game.field.getMoves().isEmpty()) {
@@ -265,20 +257,12 @@ object GameBot {
             return moves
         }
 
-
-        var startTimePF = System.currentTimeMillis() // TODO
-
+        val startTimePatternFinding = System.currentTimeMillis()
         val threatResponses: List<Move> = getThreatResponses(game)
+        timePatternFinding += System.currentTimeMillis() - startTimePatternFinding
         if (threatResponses.isNotEmpty()) {
             return threatResponses
         }
-
-        timePatternFinding += System.currentTimeMillis() - startTimePF // TODO
-
-
-
-        var startTimeGCM = System.currentTimeMillis() // TODO
-
 
         val scoredMoves = mutableListOf<ScoredMove>()
 
@@ -287,17 +271,8 @@ object GameBot {
         for (y in 0 until game.field.height) {
             for (x in 0 until game.field.width) {
                 if (game.field.field[y][x] == null) {
-
-                    val startTimeAdjacent = System.currentTimeMillis()
-                    val has = game.field.hasAdjacent(x, y) // TODO
-                    timeAdjacent += System.currentTimeMillis() - startTimeAdjacent // TODO
-
-                    if (has) { // TODO
-
-                        val startTimeEvaluateAdjacent = System.currentTimeMillis() // TODO
+                    if (game.field.hasAdjacent(x, y)) {
                         val score: Int = Evaluator.evaluateCell(game.field, x, y, game.currentMove)
-                        timeEvaluateAdjacent += System.currentTimeMillis() - startTimeEvaluateAdjacent // TODO
-
                         scoredMoves.add(ScoredMove(Move(x, y), score))
                     }
                 }
@@ -306,16 +281,10 @@ object GameBot {
 
         // Sort based on move score
         scoredMoves.sortByDescending { it.score }
-        scoredMoves.sortBy { it.score } // TODO why not descending order
         for (scoredMove in scoredMoves) {
             moves.add(scoredMove.move)
         }
-
-
-        timeGrabClosestMomve += System.currentTimeMillis() - startTimeGCM // TODO
-
-
-        timeGetPotentialMoves += System.currentTimeMillis() - startTimeGPM // TODO
+        timeGetSortedPotentialMoves += System.currentTimeMillis() - startTimeGetSortedPotentialMoves
 
         return moves.toList()
     }
