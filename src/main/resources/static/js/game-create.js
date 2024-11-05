@@ -8,9 +8,6 @@ document.getElementById('createGameForm').addEventListener('submit', async funct
     const requestData = {
         ownerSymbol: ownerSymbol === "X" ? "CROSS" : "ZERO", // Конвертация в enum
         memberSymbol: memberSymbol === "X" ? "CROSS" : "ZERO", // Конвертация в enum
-        width: 19,
-        height: 19,
-        needToWin: 5,
         isGameWithBot: isGameWithBot,
     };
 

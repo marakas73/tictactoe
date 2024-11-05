@@ -5,8 +5,5 @@ import com.test.tictactoe.enum.GameSymbol
 data class GameCreateRequest(
     val ownerSymbol: GameSymbol,
     val memberSymbol: GameSymbol,
-    val width: Int,
-    val height: Int,
-    val needToWin: Int,
     val isGameWithBot: Boolean,
 )

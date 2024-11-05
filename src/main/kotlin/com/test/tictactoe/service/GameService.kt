@@ -19,6 +19,12 @@ class GameService (
     private val userRepository: UserRepository,
     private val gameHistoryRepository: GameHistoryRepository
 ) {
+    companion object {
+        private const val gameHeight = 19
+        private const val gameWidth = 19
+        private const val gameNeedToWin = 5
+    }
+
     suspend fun getGameState(
         playerLogin: String
     ): Game? = withContext(Dispatchers.IO) {
@@ -34,8 +40,8 @@ class GameService (
         val owner = userRepository.findByLogin(ownerLogin)
         owner?.let {
             with(request) {
-                val maxSize = maxOf(width, height)
-                if (needToWin !in 3..maxSize) {
+                val maxSize = maxOf(gameWidth, gameHeight)
+                if (gameNeedToWin !in 3..maxSize) {
                     return@withContext null
                 }
                 if (ownerSymbol == memberSymbol) {
@@ -43,8 +49,8 @@ class GameService (
                 }
 
                 val field = Field(
-                    width = width,
-                    height = height,
+                    width = gameWidth,
+                    height = gameHeight,
                 )
 
                 val game = if(isGameWithBot) Game(
@@ -52,14 +58,14 @@ class GameService (
                     ownerSymbol = ownerSymbol,
                     memberSymbol = memberSymbol,
                     field = field,
-                    needToWin = needToWin,
+                    needToWin = gameNeedToWin,
                     isGameWithBot = true,
                 ) else Game(
                     owner = owner,
                     ownerSymbol = ownerSymbol,
                     memberSymbol = memberSymbol,
                     field = field,
-                    needToWin = needToWin,
+                    needToWin = gameNeedToWin,
                     isGameWithBot = false,
                 )
 
