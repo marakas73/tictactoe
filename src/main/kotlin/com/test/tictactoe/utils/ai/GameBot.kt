@@ -7,7 +7,7 @@ import com.test.tictactoe.utils.hasAdjacent
 
 object GameBot {
     private const val START_DEPTH = 2
-    private const val END_DEPTH = 2
+    private const val END_DEPTH = 8
     private const val TIME_LIMIT_MILLIS = 5000
 
     private var handledScenarioCount = 0
@@ -57,15 +57,10 @@ object GameBot {
     ): Move {
         var moves = getSortedPotentialMoves(game)
 
-        println("sorted potential moves: ${moves}") // TODO
-        //println("sorted potential moves: ${moves.map { Evaluator.evaluateCell(game.field, it.x, it.y, game.memberSymbol) }.toList()}") // TODO
-
         if (moves.size == 1) return moves[0]
         for (i in startDepth..endDepth) {
             try {
                 moves = getScoredMoves(game, moves, i)
-
-                println("scored moves on depth $i : $moves") // TODO
             } catch (e: InterruptedException) {
                 break
             }
@@ -106,6 +101,7 @@ object GameBot {
 
         scoredMoves.sortByDescending { it.score }
         printSearchInfo(scoredMoves[0].move, scoredMoves[0].score, depth)
+
         return scoredMoves.map { it.move }
     }
 
@@ -116,24 +112,21 @@ object GameBot {
         alpha: Int,
         beta: Int
     ): Int {
+        handledScenarioCount++
         if (Thread.interrupted() || (System.currentTimeMillis() - startTime) > TIME_LIMIT_MILLIS) {
             throw InterruptedException()
         }
-
-        var newAlpha = alpha
-        handledScenarioCount++
-
         if (depth == 0 || getWinner(game, move) != null) {
             return Evaluator.evaluateField(game, move, depth)
         }
 
         var value: Int
         var best = Int.MIN_VALUE
+        var newAlpha = alpha
 
         val moves = getSortedPotentialMoves(game)
 
         for (currentMove in moves) {
-
             game.makeMove(currentMove)
             value = -negamax(game, currentMove, depth - 1, -beta, -newAlpha)
             game.undoMove(currentMove)

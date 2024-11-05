@@ -45,8 +45,8 @@ object Evaluator {
     }
 
     fun evaluateField(game: Game, lastMove: Move, depth: Int): Int {
-        val playerSymbol = game.getNonCurrentMoveSymbol()
-        val opponentSymbol = game.currentMove
+        val playerSymbol = game.currentMove
+        val opponentSymbol = game.getNonCurrentMoveSymbol()
 
         // Check for a winning/losing position
         val winner = getWinner(game, lastMove)
