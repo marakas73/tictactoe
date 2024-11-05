@@ -10,8 +10,8 @@ import com.test.tictactoe.exception.throwCannotGetGameState
 import com.test.tictactoe.exception.throwForbidden
 import com.test.tictactoe.service.GameService
 import com.test.tictactoe.service.TokenService
-import com.test.tictactoe.utils.toCreateResponse
-import com.test.tictactoe.utils.toGameStateResponse
+import com.test.tictactoe.utils.game.toCreateResponse
+import com.test.tictactoe.utils.game.toGameStateResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*

@@ -10,6 +10,8 @@ import com.test.tictactoe.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
+import com.test.tictactoe.utils.ai.GameBot
+import com.test.tictactoe.utils.game.*
 
 @Service
 class GameService (
@@ -17,6 +19,12 @@ class GameService (
     private val userRepository: UserRepository,
     private val gameHistoryRepository: GameHistoryRepository
 ) {
+    companion object {
+        private const val gameHeight = 19
+        private const val gameWidth = 19
+        private const val gameNeedToWin = 5
+    }
+
     suspend fun getGameState(
         playerLogin: String
     ): Game? = withContext(Dispatchers.IO) {
@@ -32,8 +40,8 @@ class GameService (
         val owner = userRepository.findByLogin(ownerLogin)
         owner?.let {
             with(request) {
-                val maxSize = maxOf(width, height)
-                if (needToWin !in 3..maxSize) {
+                val maxSize = maxOf(gameWidth, gameHeight)
+                if (gameNeedToWin !in 3..maxSize) {
                     return@withContext null
                 }
                 if (ownerSymbol == memberSymbol) {
@@ -41,8 +49,8 @@ class GameService (
                 }
 
                 val field = Field(
-                    width = width,
-                    height = height,
+                    width = gameWidth,
+                    height = gameHeight,
                 )
 
                 val game = if(isGameWithBot) Game(
@@ -50,14 +58,14 @@ class GameService (
                     ownerSymbol = ownerSymbol,
                     memberSymbol = memberSymbol,
                     field = field,
-                    needToWin = needToWin,
+                    needToWin = gameNeedToWin,
                     isGameWithBot = true,
                 ) else Game(
                     owner = owner,
                     ownerSymbol = ownerSymbol,
                     memberSymbol = memberSymbol,
                     field = field,
-                    needToWin = needToWin,
+                    needToWin = gameNeedToWin,
                     isGameWithBot = false,
                 )
 
@@ -126,13 +134,9 @@ class GameService (
 
         playerGame.status = GameStatus.IN_PROGRESS
         playerGame.status = if(playerGame.isGameWithBot && playerGame.currentMove == playerGame.memberSymbol) {
-            val move: Pair<Int, Int>? = getMoveByBot(playerGame, playerGame.memberSymbol)
+            val move: Move = GameBot.getBestMove(playerGame)
+            handleMoveByBot(playerGame, playerGame.memberSymbol, move.x, move.y) ?: GameStatus.ABORTED
 
-            if(move == null) {
-                GameStatus.ABORTED
-            } else {
-                handleMoveByBot(playerGame, playerGame.memberSymbol, move.first, move.second) ?: GameStatus.ABORTED
-            }
         } else GameStatus.IN_PROGRESS
 
         gameRepository.save(playerGame)
@@ -157,28 +161,24 @@ class GameService (
             return@withContext null
         }
 
-        doMove(game, playerMoveSymbol, x, y)
+        game.field.field[y][x] = playerMoveSymbol
 
         val newGameStatus = when {
-            isWinningMove(game, playerMoveSymbol, x, y) -> handleWin(game)
+            isWinningMove(game, playerMoveSymbol, Move(x, y)) -> handleWin(game)
             isDraw(game) -> handleDraw(game)
             else -> {
-                changeCurrentMove(game)
+                game.changeCurrentMove()
 
                 if(game.isGameWithBot) {
-                    val move: Pair<Int, Int>? = getMoveByBot(game, game.memberSymbol)
-
-                    if(move == null) {
-                        GameStatus.ABORTED
-                    } else {
-                        handleMoveByBot(game, game.memberSymbol, move.first, move.second)
-                    }
+                    val move: Move = GameBot.getBestMove(game)
+                    handleMoveByBot(game, game.memberSymbol, move.x, move.y)
                 } else GameStatus.IN_PROGRESS
             }
         }
 
         // Set new status to game and save
         if(game.status != newGameStatus) {
+
             game.status = newGameStatus ?: return@withContext null
         }
 
@@ -187,62 +187,18 @@ class GameService (
         return@withContext newGameStatus
     }
 
-    private fun getMoveByBot(
-        game: Game,
-        botSymbol: GameSymbol
-    ): Pair<Int, Int>? {
-        if (game.status != GameStatus.IN_PROGRESS
-            || game.currentMove != botSymbol
-            || !game.isGameWithBot
-        ) {
-
-            return null
-        }
-
-        val possibleMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-        val possibleWinMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-        val possibleOpponentWinMoves: MutableList<Pair<Int, Int>> = mutableListOf()
-
-        val field = game.field.field
-        for (y in 0 until game.field.height) {
-            for (x in 0 until game.field.width) {
-                if (field[y][x] == null) {
-                    val currentPair = Pair(x, y)
-
-                    possibleMoves.add(currentPair)
-
-                    if (isWinningMove(game, botSymbol, x, y)) {
-                        possibleWinMoves.add(currentPair)
-                    } else if (isWinningMove(game, game.ownerSymbol, x, y)) {
-                        possibleOpponentWinMoves.add(currentPair)
-                    }
-                }
-            }
-        }
-
-        return if (possibleWinMoves.isNotEmpty()) { // Return a random winning move if it exists
-            possibleWinMoves.random()
-        } else if (possibleOpponentWinMoves.isNotEmpty()) { // Otherwise, block the random opponent's winning move
-            possibleOpponentWinMoves.random()
-        } else if (possibleMoves.isNotEmpty()) { // If the opponent has no winning move, return a random possible move
-            possibleMoves.random()
-        } else { // If there are no moves at all, return null
-            return null
-        }
-    }
-
     private fun handleMoveByBot(game: Game, botSymbol: GameSymbol, x: Int, y: Int) : GameStatus? {
         if(!isMoveValid(botSymbol, game, x, y)) {
             return null
         }
 
-        doMove(game, game.currentMove, x, y)
+        game.field.field[y][x] = game.currentMove
 
         return when {
-            isWinningMove(game, game.currentMove, x, y) -> handleWin(game)
+            isWinningMove(game, game.currentMove, Move(x, y)) -> handleWin(game)
             isDraw(game) -> handleDraw(game)
             else -> {
-                changeCurrentMove(game)
+                game.changeCurrentMove()
                 GameStatus.IN_PROGRESS
             }
         }
@@ -276,10 +232,6 @@ class GameService (
         return GameStatus.DRAW
     }
 
-    private fun doMove(game: Game, symbol: GameSymbol, x: Int, y: Int) {
-        game.field.field[y][x] = symbol
-    }
-
     private fun updateRating(winner: User, loser: User, isDraw: Boolean = false) {
         fun safeUpdate(winnerRatingBonus: Int, loserRatingBonus: Int) {
             winner.rating = maxOf(0, winner.rating + winnerRatingBonus)
@@ -304,59 +256,6 @@ class GameService (
         )
 
         gameHistoryRepository.save(gameRecord)
-    }
-
-    private fun isPositionValid(game: Game, x: Int, y: Int): Boolean {
-        return !(x < 0 || x >= game.field.width || y < 0 || y >= game.field.height)
-    }
-
-    private fun isMoveValid(moveSymbol: GameSymbol, game: Game, x: Int, y: Int) : Boolean {
-        return (game.status == GameStatus.IN_PROGRESS
-                && isPositionValid(game, x, y)
-                && game.field.field[y][x] == null
-                && (moveSymbol == game.currentMove))
-    }
-
-    private fun changeCurrentMove(game: Game) {
-        game.currentMove = GameSymbol.entries[(game.currentMove.ordinal + 1) % GameSymbol.entries.size]
-    }
-
-    private fun isDraw(game: Game): Boolean {
-        return !game.field.field.any { innerList -> innerList.contains(null) }
-    }
-
-    private fun isWinningMove(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int): Boolean {
-        return (countDirection(game, currentMoveSymbol, x, y, 1, 0)
-                + countDirection(game, currentMoveSymbol, x, y, -1, 0) + 1 >= game.needToWin)
-                || (countDirection(game, currentMoveSymbol, x, y, 0, -1)
-                + countDirection(game, currentMoveSymbol, x, y, 0, 1) + 1 >= game.needToWin)
-                || (countDirection(game, currentMoveSymbol, x, y, -1, -1)
-                + countDirection(game, currentMoveSymbol, x, y, 1, 1) + 1 >= game.needToWin)
-                || (countDirection(game, currentMoveSymbol, x, y, -1, 1)
-                + countDirection(game, currentMoveSymbol, x, y, 1, -1) + 1 >= game.needToWin)
-    }
-
-    private fun countDirection(game: Game, currentMoveSymbol: GameSymbol, x: Int, y: Int, deltaX: Int, deltaY: Int): Int {
-        var counter = 0 // Not including (x,y) symbol
-        var currentX = x + deltaX
-        var currentY = y + deltaY
-
-        while (
-            isWithinBounds(game, currentX, currentY)
-            && game.field.field[currentY][currentX] == currentMoveSymbol
-        ) {
-            counter++
-            if (counter == game.needToWin) {
-                return counter
-            }
-            currentX += deltaX
-            currentY += deltaY
-        }
-        return counter
-    }
-
-    private fun isWithinBounds(game: Game, x: Int, y: Int): Boolean {
-        return x in 0 until game.field.width && y in 0 until game.field.height
     }
 
     private fun deleteGame(game: Game) {
