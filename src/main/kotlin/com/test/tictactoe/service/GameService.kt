@@ -396,7 +396,6 @@ class GameService (
             tournament.roundGames.add(
                 RoundGame(
                     game= game,
-                    round = 1,
                     tournament = tournament
                 )
             )

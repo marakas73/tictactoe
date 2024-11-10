@@ -15,9 +15,6 @@ data class RoundGame(
     @JoinColumn(name = "winner_id", referencedColumnName = "id")
     var winner: User? = null,
 
-    @Column
-    val round: Int = 1,
-
     @ManyToOne
     @JoinColumn(name = "tournament_id")
     val tournament: Tournament = Tournament()
