@@ -294,16 +294,14 @@ class GameService (
     }
 
     private fun handleWin(game: Game) : GameStatus? {
-        if(!game.isGameWithBot) {
+        if(!game.isGameWithBot && !game.isTournament()) {
             val member = game.member ?: return null
 
             val winner = if (game.currentMove == game.ownerSymbol) game.owner else member
             val looser = if (winner == game.owner) member else game.owner
 
-            if (!game.isTournament()) {
-                updateRating(winner, looser)
-                saveGameRecord(game.owner, member, winner, looser, false)
-            }
+            updateRating(winner, looser)
+            saveGameRecord(game.owner, member, winner, looser, false)
         }
 
         return if (game.currentMove == GameSymbol.CROSS) {
