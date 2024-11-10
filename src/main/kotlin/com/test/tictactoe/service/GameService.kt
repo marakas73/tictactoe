@@ -221,7 +221,7 @@ class GameService (
             owner = owner,
             playersCount = request.playersCount,
             players = mutableListOf(),
-            roundGames = mutableListOf()
+            roundGames = mutableMapOf(),
         )
 
         val savedTournament = tournamentRepository.save(tournament)
@@ -268,6 +268,7 @@ class GameService (
         }
 
         playerTournament.isStarted = true
+        playerTournament.currentRound = 1
         val savedTournament = tournamentRepository.save(playerTournament)
         createRounds(savedTournament)
 
@@ -348,7 +349,9 @@ class GameService (
     private fun createNewRoundsIfNeeded(tournament: Tournament){
         // Check if all games have winner and make list
         val winners: MutableList<User> =
-            tournament.roundGames.map{
+            tournament.roundGames
+                .getOrPut(tournament.currentRound) { mutableListOf() }
+                    .map{
                 roundGame -> roundGame.winner
                 ?: return
             }
@@ -373,12 +376,15 @@ class GameService (
             return
         }
 
+        updatedTournament.currentRound++
         createRounds(updatedTournament)
 
         tournamentRepository.save(updatedTournament)
     }
 
     private fun createRounds(tournament: Tournament){
+        val roundGames = tournament.roundGames.getOrPut(tournament.currentRound) { mutableListOf() }
+
         for(i in tournament.players.indices step 2){
             val field = Field(
                 width = gameWidth,
@@ -399,7 +405,8 @@ class GameService (
             tournament.players[i].currentGame = game
             tournament.players[i + 1].currentGame = game
 
-            tournament.roundGames.add(
+
+            roundGames.add(
                 RoundGame(
                     game= game,
                     tournament = tournament
@@ -459,9 +466,5 @@ class GameService (
 
     fun findGameById(id: Long): Game? {
         return gameRepository.findGameById(id)
-    }
-
-    fun findTournamentById(id: Long): Tournament? {
-        return tournamentRepository.findById(id).orElse(null)
     }
 }
