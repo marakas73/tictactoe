@@ -1,10 +1,6 @@
 package com.test.tictactoe.model
 
-import com.test.tictactoe.enum.GameStatus
-import com.test.tictactoe.enum.GameSymbol
-import com.test.tictactoe.service.GameService
 import jakarta.persistence.*
-import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "tournaments")
@@ -27,5 +23,5 @@ data class Tournament(
     val roundGames: MutableList<RoundGame> = mutableListOf(),
 
     @Column
-    var started: Boolean = false
+    var isStarted: Boolean = false
 )

@@ -2,17 +2,9 @@ package com.test.tictactoe.utils.game
 
 import com.test.tictactoe.controller.game.response.GameCreateResponse
 import com.test.tictactoe.controller.game.response.GameStateResponse
-import com.test.tictactoe.controller.game.response.TournamentCreateResponse
 import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.Game
-import com.test.tictactoe.model.Tournament
 import com.test.tictactoe.utils.switch
-
-fun Tournament.toTournamentCreateResponse(): TournamentCreateResponse =
-    TournamentCreateResponse(
-        id = this.id,
-        playersCount = this.playersCount
-    )
 
 fun Game.toCreateResponse(): GameCreateResponse =
     GameCreateResponse(

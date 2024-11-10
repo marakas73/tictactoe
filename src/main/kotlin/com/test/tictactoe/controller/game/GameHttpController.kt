@@ -11,6 +11,7 @@ import com.test.tictactoe.service.TokenService
 import com.test.tictactoe.utils.game.toCreateResponse
 import com.test.tictactoe.utils.game.toGameStateResponse
 import com.test.tictactoe.utils.game.toTournamentCreateResponse
+import com.test.tictactoe.utils.game.toTournamentStateResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -162,5 +163,16 @@ class GameHttpController (
             ResponseEntity(HttpStatus.OK)
         else
             ResponseEntity(HttpStatus.BAD_REQUEST)
+    }
+
+    @GetMapping("/tournament/state")
+    suspend fun getTournamentState(
+        @RequestParam id: Long,
+    ): TournamentStateResponse {
+        return gameService.getTournamentState(
+            tournamentId = id
+        )
+            ?.toTournamentStateResponse()
+            ?: throwCannotGetTournamentState()
     }
 }

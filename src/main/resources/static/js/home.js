@@ -195,6 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = '/leaderboard';
         });
 
+    document.getElementById('create-tournament').addEventListener('click', () => {
+                window.location.href = '/tournament/create';
+            });
+
 
     document.getElementById('logout').addEventListener('click', () => {
         localStorage.removeItem('accessToken');
