@@ -11,3 +11,7 @@ fun throwCannotCreateGameException() : Nothing {
 fun throwCannotExecuteMoveException() : Nothing {
     throwBadRequest("Cannot execute the move.")
 }
+
+fun throwCannotCreateTournamentException() : Nothing {
+    throwBadRequest("Cannot create a tournament.")
+}

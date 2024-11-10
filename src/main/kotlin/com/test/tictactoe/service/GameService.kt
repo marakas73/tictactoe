@@ -1,12 +1,11 @@
 package com.test.tictactoe.service
 
 import com.test.tictactoe.controller.game.request.GameCreateRequest
+import com.test.tictactoe.controller.game.request.TournamentCreateRequest
 import com.test.tictactoe.enum.GameStatus
 import com.test.tictactoe.enum.GameSymbol
 import com.test.tictactoe.model.*
-import com.test.tictactoe.repository.GameHistoryRepository
-import com.test.tictactoe.repository.GameRepository
-import com.test.tictactoe.repository.UserRepository
+import com.test.tictactoe.repository.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
@@ -17,12 +16,15 @@ import com.test.tictactoe.utils.game.*
 class GameService (
     private val gameRepository: GameRepository,
     private val userRepository: UserRepository,
-    private val gameHistoryRepository: GameHistoryRepository
+    private val gameHistoryRepository: GameHistoryRepository,
+    private val tournamentRepository: TournamentRepository,
+    private val roundRepository: RoundRepository
 ) {
     companion object {
         private const val gameHeight = 19
         private const val gameWidth = 19
         private const val gameNeedToWin = 5
+        private val allowedTournamentPlayersCount = listOf(2,4, 8) //TODO to remove 2
     }
 
     suspend fun getGameState(
@@ -41,10 +43,9 @@ class GameService (
         owner?.let {
             with(request) {
                 val maxSize = maxOf(gameWidth, gameHeight)
-                if (gameNeedToWin !in 3..maxSize) {
-                    return@withContext null
-                }
-                if (ownerSymbol == memberSymbol) {
+                if (ownerSymbol == memberSymbol
+                    || owner.tournament != null
+                    ) {
                     return@withContext null
                 }
 
@@ -88,7 +89,7 @@ class GameService (
 
         val member = userRepository.findByLogin(memberLogin) ?: return@withContext false
 
-        if (game.member != null || member.isInGame)
+        if (game.member != null || member.isInGame || member.tournament != null)
             return@withContext false
 
         game.member = member
@@ -106,16 +107,31 @@ class GameService (
         val player = userRepository.findByLogin(playerLogin) ?: return@withContext false
         val game = player.currentGame ?: return@withContext false
 
-        if(game.status == GameStatus.IN_PROGRESS || player == game.owner) {
-            deleteGame(game)
+        if (!game.isTournament()) {
+            if (game.status == GameStatus.IN_PROGRESS || player == game.owner) {
+                deleteGame(game)
+            } else {
+                player.currentGame = null
+                game.member = null
+
+                userRepository.save(player)
+                gameRepository.save(game)
+            }
         } else {
-            player.currentGame = null
-            game.member = null
+            val member = game.member
 
-            userRepository.save(player)
-            gameRepository.save(game)
+            if(game.status == GameStatus.IN_PROGRESS && member != null){
+                val techWinner = if(player == game.owner) member else game.owner
+
+                val roundGame = roundRepository.findByGame(game) ?: return@withContext false
+                roundGame.game = null
+                roundGame.winner = techWinner
+
+                roundRepository.save(roundGame)
+            }
+
+            deleteGame(game)
         }
-
         return@withContext true
     }
 
@@ -187,6 +203,79 @@ class GameService (
         return@withContext newGameStatus
     }
 
+    suspend fun createTournament(
+        ownerLogin: String,
+        request: TournamentCreateRequest
+    ): Tournament? = withContext(Dispatchers.IO) {
+        val owner = userRepository.findByLogin(ownerLogin) ?: return@withContext null
+
+        if(owner.tournament != null){
+            return@withContext null
+        }
+
+        if(request.playersCount !in allowedTournamentPlayersCount){
+            return@withContext null
+        }
+
+        val tournament = Tournament(
+            owner = owner,
+            playersCount = request.playersCount,
+            players = mutableListOf(),
+            roundGames = mutableListOf()
+        )
+
+        val savedTournament = tournamentRepository.save(tournament)
+        owner.tournament = tournament
+
+        userRepository.save(owner)
+
+        return@withContext savedTournament
+    }
+
+    suspend fun joinTournament(
+        playerLogin: String,
+        tournamentId: Long
+    ): Boolean = withContext(Dispatchers.IO) {
+        val player = userRepository.findByLogin(playerLogin) ?: return@withContext false
+        val tournament = tournamentRepository.findById(tournamentId).orElse(null) ?: return@withContext false
+
+        if(player.tournament != null
+            || player.isInGame
+            || tournament.playersCount == tournament.players.size
+            || tournament.started){
+            return@withContext false
+        }
+
+        tournament.players.add(player)
+        player.tournament = tournament
+
+        userRepository.save(player)
+
+        return@withContext true
+    }
+
+    suspend fun startTournament(
+        playerLogin: String
+    ): Boolean = withContext(Dispatchers.IO) {
+        val player = userRepository.findByLogin(playerLogin) ?: return@withContext false
+        val playerTournament = player.tournament ?: return@withContext false
+
+        if(playerTournament.owner != player
+            || playerTournament.started
+            || playerTournament.players.size != playerTournament.playersCount
+            ) {
+            return@withContext false
+        }
+
+        playerTournament.started = true
+        val savedTournament = tournamentRepository.save(playerTournament)
+        createRounds(savedTournament)
+
+        tournamentRepository.save(savedTournament)
+
+        return@withContext true
+    }
+
     private fun handleMoveByBot(game: Game, botSymbol: GameSymbol, x: Int, y: Int) : GameStatus? {
         if(!isMoveValid(botSymbol, game, x, y)) {
             return null
@@ -211,14 +300,109 @@ class GameService (
             val winner = if (game.currentMove == game.ownerSymbol) game.owner else member
             val looser = if (winner == game.owner) member else game.owner
 
-            updateRating(winner, looser)
-            saveGameRecord(game.owner, member, winner, looser, false)
+            if (!game.isTournament()) {
+                updateRating(winner, looser)
+                saveGameRecord(game.owner, member, winner, looser, false)
+            }
         }
 
-        return if (game.currentMove == GameSymbol.CROSS)
+        return if (game.currentMove == GameSymbol.CROSS) {
+            if(game.isTournament()) {
+                val roundGame = roundRepository.findByGame(game)
+                if (roundGame != null) {
+                    roundGame.game = null
+                    roundGame.winner = if (game.ownerSymbol == GameSymbol.CROSS) game.owner else game.member
+
+                    roundRepository.save(roundGame)
+
+                    val tournament = roundGame.tournament
+                    createNewRoundsIfNeeded(tournament)
+                }
+            }
+
             GameStatus.CROSS_WON
+        }
         else
+        {
+            if(game.isTournament()){
+                val roundGame = roundRepository.findByGame(game)
+                if (roundGame != null) {
+                    roundGame.game = null
+                    roundGame.winner = if (game.ownerSymbol == GameSymbol.ZERO) game.owner else game.member
+
+                    roundRepository.save(roundGame)
+
+                    val tournament = roundGame.tournament
+                    createNewRoundsIfNeeded(tournament)
+                }
+            }
+
             GameStatus.ZERO_WON
+        }
+    }
+
+    private fun createNewRoundsIfNeeded(tournament: Tournament){
+        // Check if all games have winner and make list
+        val winners: MutableList<User> =
+            tournament.roundGames.map{
+                roundGame -> roundGame.winner
+                ?: return
+            }
+                .toMutableList()
+
+        for(player in tournament.players){
+            if (winners.none { it.id == player.id }){
+                player.tournament = null
+
+                userRepository.save(player)
+            }
+        }
+
+        val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return
+        // TOURNAMENT WINNER
+        if(winners.size == 1){
+            winners[0].tournament = null
+            userRepository.save(winners[0])
+
+            tournamentRepository.delete(updatedTournament)
+
+            return
+        }
+
+        createRounds(updatedTournament)
+
+        tournamentRepository.save(updatedTournament)
+    }
+
+    private fun createRounds(tournament: Tournament){
+        for(i in tournament.players.indices step 2){
+            val field = Field(
+                width = gameWidth,
+                height = gameHeight,
+            )
+
+            val game = Game(
+                owner = tournament.players[i],
+                member = tournament.players[i + 1],
+                ownerSymbol = GameSymbol.ZERO,
+                memberSymbol = GameSymbol.CROSS,
+                field = field,
+                needToWin = gameNeedToWin,
+                status = GameStatus.IN_PROGRESS,
+                isGameWithBot = false,
+            )
+
+            tournament.players[i].currentGame = game
+            tournament.players[i + 1].currentGame = game
+
+            tournament.roundGames.add(
+                RoundGame(
+                    game= game,
+                    round = 1,
+                    tournament = tournament
+                )
+            )
+        }
     }
 
     private fun handleDraw(game: Game) : GameStatus? {

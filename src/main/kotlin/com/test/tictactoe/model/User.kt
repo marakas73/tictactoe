@@ -20,7 +20,11 @@ data class User(
     var rating: Int = 1000,
 
     @ManyToOne(cascade = [CascadeType.ALL])
-    var currentGame: Game? = null
+    var currentGame: Game? = null,
+
+    @ManyToOne
+    @JoinColumn(name = "tournament_id")
+    var tournament: Tournament? = null
 ) {
     val isInGame: Boolean
         get() = currentGame != null
