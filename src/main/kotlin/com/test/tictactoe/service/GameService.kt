@@ -398,6 +398,11 @@ class GameService (
 
         val winner = userRepository.findById(winners[0].id).orElse(null) ?: return false
 
+        val currentGame = winner.currentGame
+        if(currentGame != null){
+            deleteGame(currentGame)
+        }
+
         winner.tournament = null
         userRepository.save(winner)
 
