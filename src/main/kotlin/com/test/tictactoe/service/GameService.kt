@@ -448,8 +448,39 @@ class GameService (
         if(!game.isGameWithBot) {
             val member = game.member ?: return null
 
-            updateRating(game.owner, member, true)
-            saveGameRecord(game.owner, member, null, null, true)
+            if (!game.isTournament()) {
+                updateRating(game.owner, member, true)
+                saveGameRecord(game.owner, member, null, null, true)
+            } else {
+                val newField = Field(
+                    width = gameWidth,
+                    height = gameHeight,
+                )
+
+                val newGame = Game(
+                    owner = game.owner,
+                    member = game.member,
+                    ownerSymbol = GameSymbol.ZERO,
+                    memberSymbol = GameSymbol.CROSS,
+                    field = newField,
+                    needToWin = gameNeedToWin,
+                    status = GameStatus.IN_PROGRESS,
+                    isGameWithBot = false,
+                )
+
+                deleteGame(game)
+
+                game.owner.currentGame = newGame
+                member.currentGame = newGame
+
+                userRepository.save(game.owner)
+                userRepository.save(member)
+
+                val currentRound = roundRepository.findByGame(game) ?: return null
+                currentRound.game = newGame
+
+                roundRepository.save(currentRound)
+            }
         }
 
         return GameStatus.DRAW
