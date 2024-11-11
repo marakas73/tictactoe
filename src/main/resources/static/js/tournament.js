@@ -36,63 +36,72 @@ async function fetchTournamentState() {
         }
     } catch (error) {
         console.error('Ошибка при опросе состояния турнира:', error);
-        document.getElementById('error-message').innerText = error.message;
+        document.getElementById('errorMessage').innerText = error.message;
     }
 }
 
+// Функция для рендеринга сетки турнира
 function updateTournament(tournamentState) {
-    const totalRounds = Math.ceil(Math.log2(tournamentState.playersCount)); // Определяем количество раундов
-    const tournamentContainer = document.getElementById('tournament-container');
+    const tournamentGrid = document.getElementById('tournament-grid');
+    tournamentGrid.innerHTML = ''; // Очищаем старую сетку
 
-    let roundPlayers = [...tournamentState.playersLogin]; // Игроки, которые участвуют в текущем раунде
+    // Количество раундов (логарифм по основанию 2 от количества игроков)
+    const rounds = Math.log2(tournamentState.playersCount);
 
-    tournamentContainer.innerHTML = ''; // Очищаем контейнер перед рендером
+    let table = '<table>';
 
-    // Для каждого раунда создаем его структуру
-    for (let round = 1; round <= totalRounds + 1; round++) {
-        const roundDiv = document.createElement('div');
-        roundDiv.className = 'round';
+    // Заголовок таблицы (раунды)
+    table += '<thead><tr>';
+    table += `<th>Раунд 0</th>`;  // Добавим заголовок для Раунда 0
+    for (let round = 1; round <= rounds; round++) {
+        table += `<th>Раунд ${round}</th>`;
+    }
+    table += '</tr></thead>';
 
-        const roundGames = [];
-        // Формируем игры для текущего раунда
-        for (let i = 0; i < roundPlayers.length; i += 2) {
-            const gameDiv = document.createElement('div');
-            gameDiv.className = 'game';
+    // Создаем массив матчей для каждого раунда
+    const roundsData = [];
+    roundsData.push([]);
 
-            // Если второй игрок есть, отображаем пару игроков
-            const player1 = roundPlayers[i] || '';
-            const player2 = roundPlayers[i + 1] || '';
+    // Заполняем данные для остальных раундов, используя победителей из roundWinnersLogin
+    for (let round = 1; round <= rounds; round++) {
+        const winners = tournamentState.roundWinnersLogin[round] || [];
+        let row = winners.map(winner => winner === null ? null : winner); // Маппинг победителей или null
+        roundsData.push(row);
+    }
 
-            // Отображаем игроков
-            gameDiv.innerHTML = `
-                <div><a>${player1}</a></div>
-                <div><a>${player2}</a></div>
-            `;
+    // Теперь строим таблицу по столбцам (раунды сверху вниз)
+    let maxRows = tournamentState.playersCount;
+    for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
+        table += '<tr>';
 
-            roundGames.push(gameDiv);
-        }
+        // Для каждого раунда (столбца) мы выводим данные по строкам (игрокам)
+        for (let roundIndex = 0; roundIndex < roundsData.length; roundIndex++) {
+            if (roundIndex === 0) {
+                // Для Раунда 0 мы показываем игроков
+                const player = tournamentState.playersLogin[rowIndex] || null;
+                if (player) {
+                    table += `<td>${player}</td>`;
+                } else {
+                    table += `<td class="empty"></td>`;
+                }
+            } else {
+                if(rowIndex >= roundsData[roundIndex].length)
+                    continue;
 
-        // Добавляем игры в текущий раунд
-        roundGames.forEach(game => roundDiv.appendChild(game));
-
-        // Добавляем стрелочки, если это не последний раунд
-        if (round !== totalRounds) {
-            const arrowDiv = document.createElement('div');
-            arrowDiv.className = 'arrow-horizontal';
-            roundDiv.appendChild(arrowDiv);
-        }
-
-        tournamentContainer.appendChild(roundDiv);
-
-        // Подготовка списка игроков для следующего раунда (победители)
-        roundPlayers = [];
-
-        // Если у нас есть информация о победителях для текущего раунда
-        // Обновим список игроков, чтобы он содержал победителей
-        if (tournamentState.roundWinnersLogin[round]) {
-            roundPlayers = tournamentState.roundWinnersLogin[round]; // Заполняем победителей
+                const winner = roundsData[roundIndex][rowIndex];
+                // Для последующих раундов показываем победителей или пустые ячейки
+                if (winner) {
+                    table += `<td>${winner}</td>`;
+                } else {
+                    table += `<td class="empty"></td>`;
+                }
+            }
         }
     }
+
+    table += '</table>';
+
+    tournamentGrid.innerHTML = table;
 }
 
 async function handleTournamentStartClick() {
@@ -105,13 +114,17 @@ async function handleTournamentStartClick() {
             }
         });
 
-        document.getElementById('error-message').innerText = 'Турнир запущен';
+        if (!response.ok) {
+            document.getElementById('errorMessage').innerText = `Ошибка ${response.status}: ${response.statusText}`;
+        } else {
+            document.getElementById('errorMessage').innerText = '';
+            document.getElementById('successMessage').innerText = 'Турнир запущен';
+        }
     } catch (error) {
         console.error('Ошибка при попытке старта:', error);
-        document.getElementById('error-message').innerText = error.message;
+        document.getElementById('errorMessage').innerText = error.message;
     }
 }
-
 
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -123,5 +136,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     startPolling()
 
-    document.getElementById('start-button').onclick = () => handleTournamentStartClick();
+    document.getElementById('startTournamentButton').onclick = () => handleTournamentStartClick();
 });

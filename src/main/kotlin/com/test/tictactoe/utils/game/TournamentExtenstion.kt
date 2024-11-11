@@ -5,6 +5,7 @@ import com.test.tictactoe.controller.game.response.TournamentStateResponse
 import com.test.tictactoe.model.Tournament
 import kotlin.math.ceil
 import kotlin.math.log
+import kotlin.math.pow
 
 fun Tournament.toTournamentCreateResponse(): TournamentCreateResponse =
     TournamentCreateResponse(
@@ -22,7 +23,12 @@ fun Tournament.toTournamentStateResponse() : TournamentStateResponse {
                 .filter { it.round == i }
                     .map { it.winner?.login }
         )
-        roundWinnersLogin[i] = currentRoundWinners
+        if(currentRoundWinners.size != 0) {
+            roundWinnersLogin[i] = currentRoundWinners
+        } else {
+            val possibleWinnersCount = this.playersCount / ceil(2.0.pow(i)).toInt()
+            roundWinnersLogin[i] = MutableList(possibleWinnersCount) { null }
+        }
 
     }
 

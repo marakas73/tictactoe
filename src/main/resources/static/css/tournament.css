@@ -1,0 +1,83 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.tournament-container {
+    text-align: center;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 20px auto;
+    font-size: 14px;
+}
+
+th, td {
+    width: 150px;
+    height: 50px;
+    border: 2px solid #ccc;
+    text-align: center;
+    vertical-align: middle;
+}
+
+th {
+    background-color: #f1f1f1;
+    font-weight: bold;
+}
+
+td {
+    background-color: white;
+    position: relative;
+}
+
+td.empty {
+    background-color: #e1e1e1;
+}
+
+td.playing {
+    background-color: #f7f7f7;
+}
+
+.tournament-container h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Стили для кнопки */
+#startTournamentButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+#startTournamentButton:hover {
+    background-color: #45a049;
+}
+
+/* Стили для ошибок */
+.error-message {
+    color: red;
+    font-size: 16px;
+    margin-top: 20px;
+    padding: 10px;
+}
+
+/* Стили для успешного сообщения */
+.success-message {
+    color: green;
+    font-size: 16px;
+    margin-top: 20px;
+    padding: 10px;
+}

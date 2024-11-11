@@ -4,22 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Турнирная сетка</title>
-    <script src="js/tournament.js"></script>
+    <link rel="stylesheet" href="css/tournament.css">
 </head>
 <body>
-
-<div class="tournament">
+<div class="tournament-container">
     <h1>Турнирная сетка</h1>
 
-    <!-- Кнопка для начала турнира -->
-    <button id="start-button">Начать турнир</button>
+    <!-- Кнопка начала турнира -->
+    <button id="startTournamentButton">Начать турнир</button>
 
-    <!-- Блок для сообщений об ошибке -->
-    <div id="error-message"></div>
+    <!-- Место для вывода ошибок -->
+    <div id="errorMessage" class="error-message"></div>
 
-    <!-- Контейнер для турнирной сетки -->
-    <div id="tournament-container"></div>
+    <!-- Место для успешного сообщения -->
+    <div id="successMessage" class="success-message"></div>
+
+    <div id="tournament-grid"></div>
 </div>
 
+<script src="js/tournament.js"></script>
 </body>
 </html>
