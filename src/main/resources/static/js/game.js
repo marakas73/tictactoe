@@ -1,9 +1,4 @@
 let intervalId = null;
-var lastMove = {
-    x: -1,
-    y: -1,
-    move: ''
-};
 
 function handleGameStatus(gameStatus) {
     if(!gameStatus || gameStatus == "IN_PROGRESS"
@@ -63,8 +58,8 @@ async function getGameState() {
 
                 if(lastGameRecord.gameId == currentGameId) {
 
-                    const cellDiv = document.getElementById(`cell-${lastMove.y}-${lastMove.x}`);
-                    cellDiv.innerText = getSymbolByText(lastMove.move);
+                    const cellDiv = document.getElementById(`cell-${lastGameRecord.lastMoveY}-${lastGameRecord.lastMoveX}`);
+                    cellDiv.innerText = getSymbolByText(lastGameRecord.lastMoveSymbol);
 
                     playerLogin = fetchUserInfo().login;
                     var gameStatus;
@@ -222,10 +217,6 @@ async function handleCellClick(rowIndex, colIndex) {
                 x: colIndex,
                 y: rowIndex
             };
-
-            lastMove.x = colIndex;
-            lastMove.y = rowIndex;
-            lastMove.move = gameState.currentMove;
 
             const response = await fetch('api/game/move', {
                 method: 'POST',

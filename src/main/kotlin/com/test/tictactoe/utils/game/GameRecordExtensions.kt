@@ -13,4 +13,7 @@ fun GameRecord.toGameRecordDTO(): GameRecordDTO =
         isDraw = isDraw,
         isTournament = isTournament,
         gameId = gameId,
+        lastMoveX = lastMoveX,
+        lastMoveY = lastMoveY,
+        lastMoveSymbol = lastMoveSymbol
     )

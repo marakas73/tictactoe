@@ -1,5 +1,7 @@
 package com.test.tictactoe.controller.user.dto
 
+import com.test.tictactoe.enum.GameSymbol
+
 class GameRecordDTO(
     val id: Long,
     val player1Login: String,
@@ -9,4 +11,7 @@ class GameRecordDTO(
     val isDraw: Boolean,
     val isTournament: Boolean,
     val gameId: Long,
+    val lastMoveX: Int,
+    val lastMoveY: Int,
+    val lastMoveSymbol: GameSymbol
 )

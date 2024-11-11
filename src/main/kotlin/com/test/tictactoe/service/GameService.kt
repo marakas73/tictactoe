@@ -181,8 +181,8 @@ class GameService (
         game.field.field[y][x] = playerMoveSymbol
 
         val newGameStatus = when {
-            isWinningMove(game, playerMoveSymbol, Move(x, y)) -> handleWin(game)
-            isDraw(game) -> handleDraw(game)
+            isWinningMove(game, playerMoveSymbol, Move(x, y)) -> handleWin(game, x, y, playerMoveSymbol)
+            isDraw(game) -> handleDraw(game, x, y, playerMoveSymbol)
             else -> {
                 game.changeCurrentMove()
 
@@ -292,8 +292,8 @@ class GameService (
         game.field.field[y][x] = game.currentMove
 
         return when {
-            isWinningMove(game, game.currentMove, Move(x, y)) -> handleWin(game)
-            isDraw(game) -> handleDraw(game)
+            isWinningMove(game, game.currentMove, Move(x, y)) -> handleWin(game, x, y, game.currentMove)
+            isDraw(game) -> handleDraw(game, x, y, game.currentMove)
             else -> {
                 game.changeCurrentMove()
                 GameStatus.IN_PROGRESS
@@ -301,7 +301,7 @@ class GameService (
         }
     }
 
-    private fun handleWin(game: Game) : GameStatus? {
+    private fun handleWin(game: Game, lastMoveX: Int, lastMoveY: Int, lastMoveSymbol: GameSymbol) : GameStatus? {
         if(!game.isGameWithBot && !game.isTournament()) {
             val member = game.member ?: return null
 
@@ -309,7 +309,18 @@ class GameService (
             val looser = if (winner == game.owner) member else game.owner
 
             updateRating(winner, looser)
-            saveGameRecord(game.owner, member, winner, looser, false, false, gameId = game.id)
+            saveGameRecord(
+                game.owner,
+                member,
+                winner,
+                looser,
+                false,
+                false,
+                 game.id,
+                lastMoveX,
+                lastMoveY,
+                lastMoveSymbol
+            )
         }
 
         return if (game.currentMove == GameSymbol.CROSS) {
@@ -322,7 +333,18 @@ class GameService (
                         return GameStatus.ZERO_WON
                     }
 
-                    saveGameRecord(winner, looser, winner, looser, false, true, gameId = game.id)
+                    saveGameRecord(
+                        winner,
+                        looser,
+                        winner,
+                        looser,
+                        false,
+                        true,
+                        gameId = game.id,
+                        lastMoveX,
+                        lastMoveY,
+                        lastMoveSymbol
+                    )
 
                     setRoundWinner(winner, roundGame)
 
@@ -339,9 +361,23 @@ class GameService (
                 val roundGame = roundRepository.findByGame(game)
                 if (roundGame != null) {
                     val winner: User? = if (game.ownerSymbol == GameSymbol.ZERO) game.owner else game.member
-                    if(winner == null){
+                    val looser: User? = if(game.ownerSymbol == GameSymbol.ZERO) game.member else game.owner
+                    if(winner == null || looser == null){
                         return GameStatus.ZERO_WON
                     }
+
+                    saveGameRecord(
+                        winner,
+                        looser,
+                        winner,
+                        looser,
+                        false,
+                        true,
+                        gameId = game.id,
+                        lastMoveX,
+                        lastMoveY,
+                        lastMoveSymbol
+                    )
 
                     setRoundWinner(winner, roundGame)
 
@@ -447,13 +483,24 @@ class GameService (
         }
     }
 
-    private fun handleDraw(game: Game) : GameStatus? {
+    private fun handleDraw(game: Game, lastMoveX: Int, lastMoveY: Int, lastMoveSymbol: GameSymbol) : GameStatus? {
         if(!game.isGameWithBot) {
             val member = game.member ?: return null
 
             if (!game.isTournament()) {
                 updateRating(game.owner, member, true)
-                saveGameRecord(game.owner, member, null, null, true, false, gameId = game.id)
+                saveGameRecord(
+                    game.owner,
+                    member,
+                    null,
+                    null,
+                    true,
+                    false,
+                    gameId = game.id,
+                    lastMoveX,
+                    lastMoveY,
+                    lastMoveSymbol
+                )
             } else {
                 val newField = Field(
                     width = gameWidth,
@@ -503,7 +550,18 @@ class GameService (
         safeUpdate(25, -25)
     }
 
-    private fun saveGameRecord(player1: User, player2: User, winner: User?, looser: User?, isDraw: Boolean, isTournament: Boolean, gameId: Long) {
+    private fun saveGameRecord(
+        player1: User,
+        player2: User,
+        winner: User?,
+        looser: User?,
+        isDraw: Boolean,
+        isTournament: Boolean,
+        gameId: Long,
+        lastMoveX: Int,
+        lastMoveY: Int,
+        lastMoveSymbol: GameSymbol
+    ) {
         val gameRecord = GameRecord(
             player1 = player1,
             player2 = player2,
@@ -511,7 +569,10 @@ class GameService (
             looser = looser,
             isDraw = isDraw,
             isTournament = isTournament,
-            gameId = gameId
+            gameId = gameId,
+            lastMoveX = lastMoveX,
+            lastMoveY = lastMoveY,
+            lastMoveSymbol = lastMoveSymbol
         )
 
         gameHistoryRepository.save(gameRecord)

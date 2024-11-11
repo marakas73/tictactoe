@@ -1,5 +1,6 @@
 package com.test.tictactoe.model
 
+import com.test.tictactoe.enum.GameSymbol
 import jakarta.persistence.*
 
 @Entity
@@ -32,5 +33,14 @@ data class GameRecord (
     val isTournament: Boolean = false,
 
     @Column
-    val gameId: Long = 0
+    val gameId: Long = 0,
+
+    @Column
+    val lastMoveX: Int = 0,
+
+    @Column
+    val lastMoveY: Int = 0,
+
+    @Column
+    val lastMoveSymbol: GameSymbol = GameSymbol.CROSS
 )
