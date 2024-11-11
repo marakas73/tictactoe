@@ -7,7 +7,7 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
   liquiBase:
     change-log: db/changelog/main-changelog.xml
     enabled: false
