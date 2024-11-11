@@ -52,7 +52,6 @@ function updateTournament(tournamentState) {
 
     // Заголовок таблицы (раунды)
     table += '<thead><tr>';
-    table += `<th>Раунд 0</th>`;  // Добавим заголовок для Раунда 0
     for (let round = 1; round <= rounds; round++) {
         table += `<th>Раунд ${round}</th>`;
     }
@@ -60,41 +59,37 @@ function updateTournament(tournamentState) {
 
     // Создаем массив матчей для каждого раунда
     const roundsData = [];
-    roundsData.push([]);
 
-    // Заполняем данные для остальных раундов, используя победителей из roundWinnersLogin
+    // Заполняем данные для остальных раундов, используя победителей из roundGames
     for (let round = 1; round <= rounds; round++) {
-        const winners = tournamentState.roundWinnersLogin[round] || [];
-        let row = winners.map(winner => winner === null ? null : winner); // Маппинг победителей или null
+        const roundGame = tournamentState.roundGames[round] || [];
+        let row = roundGame.map(game => game === null ? null : game); // Маппинг победителей или null
         roundsData.push(row);
     }
 
+
+    console.log(roundsData); // TODO
+
     // Теперь строим таблицу по столбцам (раунды сверху вниз)
-    let maxRows = tournamentState.playersCount;
+    let maxRows = tournamentState.playersCount / 2;
     for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
         table += '<tr>';
 
         // Для каждого раунда (столбца) мы выводим данные по строкам (игрокам)
         for (let roundIndex = 0; roundIndex < roundsData.length; roundIndex++) {
-            if (roundIndex === 0) {
-                // Для Раунда 0 мы показываем игроков
-                const player = tournamentState.playersLogin[rowIndex] || null;
-                if (player) {
-                    table += `<td>${player}</td>`;
-                } else {
-                    table += `<td class="empty"></td>`;
-                }
-            } else {
-                if(rowIndex >= roundsData[roundIndex].length)
-                    continue;
+            if(rowIndex >= roundsData[roundIndex].length)
+                continue;
 
-                const winner = roundsData[roundIndex][rowIndex];
-                // Для последующих раундов показываем победителей или пустые ячейки
-                if (winner) {
-                    table += `<td>${winner}</td>`;
-                } else {
-                    table += `<td class="empty"></td>`;
-                }
+            const roundGame = roundsData[roundIndex][rowIndex];
+            // Для последующих раундов показываем победителей или пустые ячейки
+            if (roundGame) {
+                if(roundGame.winner)
+                    table += `<td>${roundGame.winner}</td>`;
+                else
+                    table +=
+                        `<td>Playing:<br>${roundGame.firstPlayerLogin} vs ${roundGame.secondPlayerLogin}</td>`;
+            } else {
+                table += `<td class="empty"></td>`;
             }
         }
     }

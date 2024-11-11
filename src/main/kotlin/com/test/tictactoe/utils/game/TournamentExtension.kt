@@ -14,14 +14,14 @@ fun Tournament.toTournamentCreateResponse(): TournamentCreateResponse =
     )
 
 fun Tournament.toTournamentStateResponse() : TournamentStateResponse {
-    val roundWinnersLogin = mutableMapOf<Int, MutableList<String?>>()
+    val roundWinnersLogin = mutableMapOf<Int, MutableList<SimpleRoundGame?>>()
     val roundCount = ceil(log(this.playersCount.toDouble(), 2.0)).toInt()
     for(i in 1..roundCount) {
-        val currentRoundWinners = mutableListOf<String?>()
+        val currentRoundWinners = mutableListOf<SimpleRoundGame?>()
         currentRoundWinners.addAll(
             this.roundGames
                 .filter { it.round == i }
-                    .map { it.winner?.login }
+                    .map { it.toSimpleRoundGame() }
         )
         if(currentRoundWinners.size != 0) {
             roundWinnersLogin[i] = currentRoundWinners
@@ -36,7 +36,7 @@ fun Tournament.toTournamentStateResponse() : TournamentStateResponse {
         ownerLogin = this.owner.login,
         playersCount = this.playersCount,
         playersLogin = this.players.map { it.login },
-        roundWinnersLogin = roundWinnersLogin,
+        roundGames = roundWinnersLogin,
         isStarted = this.isStarted,
     )
 }
