@@ -67,9 +67,6 @@ function updateTournament(tournamentState) {
         roundsData.push(row);
     }
 
-
-    console.log(roundsData); // TODO
-
     // Теперь строим таблицу по столбцам (раунды сверху вниз)
     let maxRows = tournamentState.playersCount / 2;
     for (let rowIndex = 0; rowIndex < maxRows; rowIndex++) {
