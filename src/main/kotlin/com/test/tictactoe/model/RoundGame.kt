@@ -11,7 +11,7 @@ data class RoundGame(
     @ManyToOne
     var game: Game? = null,
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "winner_id", referencedColumnName = "id")
     var winner: User? = null,
 
