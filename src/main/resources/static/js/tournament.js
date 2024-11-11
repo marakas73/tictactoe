@@ -95,59 +95,6 @@ function updateTournament(tournamentState) {
     }
 }
 
-/*
-function updateTournament(tournamentState) {
-    const totalRounds = Math.ceil(Math.log2(tournamentState.playersCount)); // Определяем количество раундов
-    const tournamentContainer = document.getElementById('tournament-container');
-
-    let roundPlayers = [...tournamentState.playersLogin]; // Игроки, которые участвуют в текущем раунде
-
-    tournamentContainer.innerHTML = '';
-
-    // Для каждого раунда создаем его структуру
-    for (let round = 1; round <= totalRounds; round++) {
-        const roundDiv = document.createElement('div');
-        roundDiv.className = 'round';
-
-        const roundGames = [];
-        // Формируем игры для текущего раунда
-        for (let i = 0; i < tournamentState.playersCount - 1; i += 2) {
-            const gameDiv = document.createElement('div');
-            gameDiv.className = 'game';
-
-            // Если второй игрок есть, отображаем пару игроков
-            const player1 = roundPlayers[i] || '';
-            const player2 = roundPlayers[i + 1] || '';
-
-            // Отображаем игроков
-            gameDiv.innerHTML = `
-                <div>${player1}</div>
-                <div>${player2}</div>
-            `;
-
-            roundGames.push(gameDiv);
-        }
-
-        // Добавляем игры в текущий раунд
-        roundGames.forEach(game => roundDiv.appendChild(game));
-
-        // Добавляем стрелочки, если это не последний раунд
-        if (round !== totalRounds) {
-            const arrowDiv = document.createElement('div');
-            arrowDiv.className = 'arrow-horizontal';
-            roundDiv.appendChild(arrowDiv);
-        }
-
-        tournamentContainer.appendChild(roundDiv);
-
-        // Подготовка списка игроков для следующего раунда (победители)
-        roundPlayers = roundGames.map(game => {
-            const winner = game.winner;
-            return winner ? winner.login : ''; // Это место, где мы будем показывать победителей
-        });
-    }
-}*/
-
 async function handleTournamentStartClick() {
     // Start tournament
     try {

@@ -356,6 +356,9 @@ class GameService (
                     .map { it.winner ?: return }
                         .toMutableList()
 
+
+        println(winners) // TODO
+
         for(player in tournament.players){
             if (winners.none { it.id == player.id }){
                 player.tournament = null
@@ -379,12 +382,7 @@ class GameService (
             return
         }
 
-        if(
-            updatedTournament.currentRound
-            != ceil(log(updatedTournament.playersCount.toDouble(), 2.0)).toInt()
-            ) {
-            updatedTournament.currentRound++
-        }
+        updatedTournament.currentRound++
         createRounds(updatedTournament)
 
         tournamentRepository.save(updatedTournament)
