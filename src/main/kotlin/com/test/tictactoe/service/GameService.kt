@@ -243,7 +243,7 @@ class GameService (
         if(player.tournament != null
             || player.isInGame
             || tournament.playersCount == tournament.players.size
-            || tournament.started){
+            || tournament.isStarted){
             return@withContext false
         }
 
@@ -262,13 +262,14 @@ class GameService (
         val playerTournament = player.tournament ?: return@withContext false
 
         if(playerTournament.owner != player
-            || playerTournament.started
+            || playerTournament.isStarted
             || playerTournament.players.size != playerTournament.playersCount
             ) {
             return@withContext false
         }
 
-        playerTournament.started = true
+        playerTournament.isStarted = true
+        playerTournament.currentRound = 1
         val savedTournament = tournamentRepository.save(playerTournament)
         createRounds(savedTournament)
 
@@ -424,7 +425,8 @@ class GameService (
             tournament.roundGames.add(
                 RoundGame(
                     game = game,
-                    tournament = tournament
+                    tournament = tournament,
+                    round = tournament.currentRound
                 )
             )
         }
