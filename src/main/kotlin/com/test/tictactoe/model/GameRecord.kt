@@ -27,4 +27,10 @@ data class GameRecord (
 
     @Column
     val isDraw: Boolean = true,
+
+    @Column
+    val isTournament: Boolean = false,
+
+    @Column
+    val gameId: Long = 0
 )
