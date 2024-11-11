@@ -11,6 +11,8 @@ import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import com.test.tictactoe.utils.ai.GameBot
 import com.test.tictactoe.utils.game.*
+import kotlin.math.ceil
+import kotlin.math.log
 
 @Service
 class GameService (
@@ -221,7 +223,7 @@ class GameService (
             owner = owner,
             playersCount = request.playersCount,
             players = mutableListOf(),
-            roundGames = mutableMapOf(),
+            roundGames = mutableListOf()
         )
 
         val savedTournament = tournamentRepository.save(tournament)
@@ -350,12 +352,9 @@ class GameService (
         // Check if all games have winner and make list
         val winners: MutableList<User> =
             tournament.roundGames
-                .getOrPut(tournament.currentRound) { mutableListOf() }
-                    .map{
-                roundGame -> roundGame.winner
-                ?: return
-            }
-                .toMutableList()
+                .filter { it.round == tournament.currentRound }
+                    .map { it.winner ?: return }
+                        .toMutableList()
 
         for(player in tournament.players){
             if (winners.none { it.id == player.id }){
@@ -368,6 +367,10 @@ class GameService (
         val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return
         // TOURNAMENT WINNER
         if(winners.size == 1){
+
+            println("WINNNER") // TODO
+
+
             winners[0].tournament = null
             userRepository.save(winners[0])
 
@@ -376,15 +379,18 @@ class GameService (
             return
         }
 
-        updatedTournament.currentRound++
+        if(
+            updatedTournament.currentRound
+            != ceil(log(updatedTournament.playersCount.toDouble(), 2.0)).toInt()
+            ) {
+            updatedTournament.currentRound++
+        }
         createRounds(updatedTournament)
 
         tournamentRepository.save(updatedTournament)
     }
 
     private fun createRounds(tournament: Tournament){
-        val roundGames = tournament.roundGames.getOrPut(tournament.currentRound) { mutableListOf() }
-
         for(i in tournament.players.indices step 2){
             val field = Field(
                 width = gameWidth,
@@ -405,11 +411,11 @@ class GameService (
             tournament.players[i].currentGame = game
             tournament.players[i + 1].currentGame = game
 
-
-            roundGames.add(
+            tournament.roundGames.add(
                 RoundGame(
                     game= game,
-                    tournament = tournament
+                    tournament = tournament,
+                    round = tournament.currentRound
                 )
             )
         }
@@ -466,5 +472,9 @@ class GameService (
 
     fun findGameById(id: Long): Game? {
         return gameRepository.findGameById(id)
+    }
+
+    fun findTournamentById(id: Long): Tournament? {
+        return tournamentRepository.findById(id).orElse(null)
     }
 }

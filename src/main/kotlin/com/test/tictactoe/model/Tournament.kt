@@ -20,11 +20,11 @@ data class Tournament(
     var players: MutableList<User> = mutableListOf(),
 
     @OneToMany(mappedBy = "tournament", cascade = [CascadeType.ALL], fetch = FetchType.EAGER)
-    val roundGames: MutableMap<Int, MutableList<RoundGame>> = mutableMapOf(),
-
-    @Column
-    var isStarted: Boolean = false,
+    val roundGames: MutableList<RoundGame> = mutableListOf(),
 
     @Column
     var currentRound: Int = 0,
+
+    @Column
+    var isStarted: Boolean = false
 )
