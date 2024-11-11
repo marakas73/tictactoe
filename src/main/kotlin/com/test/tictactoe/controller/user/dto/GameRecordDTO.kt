@@ -6,5 +6,7 @@ class GameRecordDTO(
     val player2Login: String,
     val winnerLogin: String?,
     val looserLogin: String?,
-    val isDraw: Boolean
+    val isDraw: Boolean,
+    val isTournament: Boolean,
+    val gameId: Long,
 )

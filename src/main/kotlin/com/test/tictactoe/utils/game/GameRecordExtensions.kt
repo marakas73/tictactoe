@@ -10,5 +10,7 @@ fun GameRecord.toGameRecordDTO(): GameRecordDTO =
         player2Login = player2.login,
         winnerLogin = winner?.login,
         looserLogin = looser?.login,
-        isDraw = isDraw
+        isDraw = isDraw,
+        isTournament = isTournament,
+        gameId = gameId,
     )

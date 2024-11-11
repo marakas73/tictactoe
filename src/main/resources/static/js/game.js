@@ -1,4 +1,9 @@
 let intervalId = null;
+var lastMove = {
+    x: -1,
+    y: -1,
+    move: ''
+};
 
 function handleGameStatus(gameStatus) {
     if(!gameStatus || gameStatus == "IN_PROGRESS"
@@ -49,7 +54,34 @@ async function getGameState() {
 
         // Проверяем, успешен ли ответ
         if (!response.ok) {
-            throw new Error(`Ошибка: ${response.status}`);
+            if (response.status === 400) {
+                let gameHistory = await getGameHistory();
+                let lastGameRecord = gameHistory.at(-1)
+
+                const params = new URLSearchParams(window.location.search);
+                let currentGameId = params.get('id');
+
+                if(lastGameRecord.gameId == currentGameId) {
+
+                    const cellDiv = document.getElementById(`cell-${lastMove.y}-${lastMove.x}`);
+                    cellDiv.innerText = getSymbolByText(lastMove.move);
+
+                    playerLogin = fetchUserInfo().login;
+                    var gameStatus;
+                    if(lastGameRecord.isDraw) {
+                        gameStatus = 'DRAW';
+                        handleGameStatus(gameStatus);
+                    } else {
+                        stopPolling();
+                        var message = `Победил игрок ${lastGameRecord.winnerLogin}`;
+                        document.getElementById('status').innerText = message;
+                    }
+                    return null
+                }
+            }
+            else {
+                throw new Error(`Ошибка: ${response.status}`);
+            }
         }
 
         const gameState = await response.json(); // Парсим JSON
@@ -70,6 +102,52 @@ async function fetchGameState() {
     } catch (error) {
         console.error('Ошибка при опросе состояния игры:', error);
         document.getElementById('status').innerText = error.message;
+    }
+}
+
+async function fetchUserInfo() {
+    try {
+        const response = await fetch('api/user/info', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка получения информации о пользователе');
+        }
+
+        const info = await response.json();
+        return info;
+
+    } catch (error) {
+        console.error('Ошибка при получении информации о пользователе:', error);
+        return null; // Возвращаем null в случае ошибки
+    }
+}
+
+async function getGameHistory() {
+    try {
+        // Отправляем запрос
+        const response = await fetch('/api/user/history', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
+
+        // Проверяем, успешен ли ответ
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        // Парсим JSON-ответ
+        const gameRecords = await response.json();
+        return gameRecords;
+    } catch (error) {
+        // Обрабатываем ошибку
+        console.error('Ошибка:', error);
     }
 }
 
@@ -144,6 +222,10 @@ async function handleCellClick(rowIndex, colIndex) {
                 x: colIndex,
                 y: rowIndex
             };
+
+            lastMove.x = colIndex;
+            lastMove.y = rowIndex;
+            lastMove.move = gameState.currentMove;
 
             const response = await fetch('api/game/move', {
                 method: 'POST',
