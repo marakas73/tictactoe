@@ -367,6 +367,11 @@ class GameService (
                         .toMutableList()
 
         for(player in tournament.players){
+            val currentGame = player.currentGame
+            if(currentGame != null){
+                deleteGame(currentGame)
+            }
+
             if (winners.none { it.id == player.id }){
                 player.tournament = null
 
@@ -391,8 +396,10 @@ class GameService (
             return false
         }
 
-        winners[0].tournament = null
-        userRepository.save(winners[0])
+        val winner = userRepository.findById(winners[0].id).orElse(null) ?: return false
+
+        winner.tournament = null
+        userRepository.save(winner)
 
         val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return false
 
