@@ -1,11 +1,9 @@
 package com.test.tictactoe.controller.game.response
 
-import com.test.tictactoe.model.RoundGame
-
 data class TournamentStateResponse(
     val ownerLogin: String,
     val playersCount: Int,
-    val playerLogins: List<String>,
-    val roundGames: List<RoundGame>,
+    val playersLogin: List<String>,
+    val roundWinnersLogin: Map<Int, List<String?>>,
     val isStarted: Boolean,
 )

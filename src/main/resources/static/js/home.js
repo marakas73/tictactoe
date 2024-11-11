@@ -192,13 +192,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     document.getElementById('leaderboard').addEventListener('click', () => {
-            window.location.href = '/leaderboard';
-        });
+        window.location.href = '/leaderboard';
+    });
 
     document.getElementById('create-tournament').addEventListener('click', () => {
-                window.location.href = '/tournament/create';
-            });
+        window.location.href = '/tournament/create';
+    });
 
+    document.getElementById('join-tournament').addEventListener('click', () => {
+        const messageDiv = document.getElementById('message');
+
+        // Создаем поле для ввода ID игры, если оно еще не создано
+        let tournamentIdInput = document.getElementById('game-id-input');
+        if (!tournamentIdInput) {
+            tournamentIdInput = document.createElement('input');
+            tournamentIdInput.type = 'text';
+            tournamentIdInput.id = 'game-id-input';
+            tournamentIdInput.placeholder = 'Введите ID игры';
+            messageDiv.appendChild(tournamentIdInput);
+
+            const joinTournamentButton = document.createElement('button');
+            joinTournamentButton.innerText = 'Присоединиться';
+            joinTournamentButton.id = 'confirm-join-game';
+            messageDiv.appendChild(joinTournamentButton);
+
+            // Обработчик нажатия на кнопку "Присоединиться"
+            joinTournamentButton.addEventListener('click', async () => {
+                const tournamentId = tournamentIdInput.value.trim();
+                if (tournamentId) {
+                    try {
+                        const response = await fetch(`/api/game/tournament/join?id=${tournamentId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            // Переход на страницу игры
+                            window.location.href = `/tournament?id=${tournamentId}`;
+                        } else {
+                            // Ошибка при присоединении к игре
+                            messageDiv.innerText = 'Ошибка при присоединении к турниру. Пожалуйста, проверьте ID.';
+                        }
+                    } catch (error) {
+                        messageDiv.innerText = 'Произошла ошибка: ' + error.message;
+                    }
+                } else {
+                    messageDiv.innerText = 'Пожалуйста, введите ID игры.';
+                }
+            });
+        }
+    });
 
     document.getElementById('logout').addEventListener('click', () => {
         localStorage.removeItem('accessToken');

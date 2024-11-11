@@ -23,5 +23,8 @@ data class Tournament(
     val roundGames: MutableList<RoundGame> = mutableListOf(),
 
     @Column
+    var currentRound: Int = 0,
+
+    @Column
     var isStarted: Boolean = false
 )
