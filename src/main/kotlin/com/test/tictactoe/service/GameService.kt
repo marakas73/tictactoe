@@ -11,8 +11,6 @@ import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Service
 import com.test.tictactoe.utils.ai.GameBot
 import com.test.tictactoe.utils.game.*
-import kotlin.math.ceil
-import kotlin.math.log
 
 @Service
 class GameService (
@@ -126,13 +124,14 @@ class GameService (
                 val techWinner = if(player == game.owner) member else game.owner
 
                 val roundGame = roundRepository.findByGame(game) ?: return@withContext false
-                roundGame.game = null
-                roundGame.winner = techWinner
 
-                roundRepository.save(roundGame)
+                setRoundWinner(techWinner, roundGame)
+
+                createNewRoundsIfNeeded(roundGame.tournament)
             }
 
-            deleteGame(game)
+            val updatedGame = gameRepository.findGameById(game.id) ?: return@withContext  false
+            deleteGame(updatedGame)
         }
         return@withContext true
     }
@@ -244,7 +243,7 @@ class GameService (
         if(player.tournament != null
             || player.isInGame
             || tournament.playersCount == tournament.players.size
-            || tournament.isStarted){
+            || tournament.started){
             return@withContext false
         }
 
@@ -263,14 +262,13 @@ class GameService (
         val playerTournament = player.tournament ?: return@withContext false
 
         if(playerTournament.owner != player
-            || playerTournament.isStarted
+            || playerTournament.started
             || playerTournament.players.size != playerTournament.playersCount
             ) {
             return@withContext false
         }
 
-        playerTournament.isStarted = true
-        playerTournament.currentRound = 1
+        playerTournament.started = true
         val savedTournament = tournamentRepository.save(playerTournament)
         createRounds(savedTournament)
 
@@ -317,10 +315,12 @@ class GameService (
             if(game.isTournament()) {
                 val roundGame = roundRepository.findByGame(game)
                 if (roundGame != null) {
-                    roundGame.game = null
-                    roundGame.winner = if (game.ownerSymbol == GameSymbol.CROSS) game.owner else game.member
+                    val winner: User? = if (game.ownerSymbol == GameSymbol.CROSS) game.owner else game.member
+                    if(winner == null){
+                        return GameStatus.ZERO_WON
+                    }
 
-                    roundRepository.save(roundGame)
+                    setRoundWinner(winner, roundGame)
 
                     val tournament = roundGame.tournament
                     createNewRoundsIfNeeded(tournament)
@@ -331,13 +331,15 @@ class GameService (
         }
         else
         {
-            if(game.isTournament()){
+            if(game.isTournament()) {
                 val roundGame = roundRepository.findByGame(game)
                 if (roundGame != null) {
-                    roundGame.game = null
-                    roundGame.winner = if (game.ownerSymbol == GameSymbol.ZERO) game.owner else game.member
+                    val winner: User? = if (game.ownerSymbol == GameSymbol.ZERO) game.owner else game.member
+                    if(winner == null){
+                        return GameStatus.ZERO_WON
+                    }
 
-                    roundRepository.save(roundGame)
+                    setRoundWinner(winner, roundGame)
 
                     val tournament = roundGame.tournament
                     createNewRoundsIfNeeded(tournament)
@@ -348,6 +350,13 @@ class GameService (
         }
     }
 
+    private fun setRoundWinner(winner: User, roundGame: RoundGame){
+        roundGame.game = null
+        roundGame.winner = winner
+
+        roundRepository.save(roundGame)
+    }
+
     private fun createNewRoundsIfNeeded(tournament: Tournament){
         // Check if all games have winner and make list
         val winners: MutableList<User> =
@@ -355,9 +364,6 @@ class GameService (
                 .filter { it.round == tournament.currentRound }
                     .map { it.winner ?: return }
                         .toMutableList()
-
-
-        println(winners) // TODO
 
         for(player in tournament.players){
             if (winners.none { it.id == player.id }){
@@ -367,25 +373,31 @@ class GameService (
             }
         }
 
-        val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return
-        // TOURNAMENT WINNER
-        if(winners.size == 1){
-
-            println("WINNNER") // TODO
-
-
-            winners[0].tournament = null
-            userRepository.save(winners[0])
-
-            tournamentRepository.delete(updatedTournament)
-
+        // CHECK TOURNAMENT WINNER
+        if(isTournamentEnded(winners, tournament)){
             return
         }
 
+        val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return
         updatedTournament.currentRound++
         createRounds(updatedTournament)
 
         tournamentRepository.save(updatedTournament)
+    }
+
+    private fun isTournamentEnded(winners: List<User>, tournament: Tournament): Boolean {
+        if (winners.size > 1) {
+            return false
+        }
+
+        winners[0].tournament = null
+        userRepository.save(winners[0])
+
+        val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return false
+
+        tournamentRepository.delete(updatedTournament)
+
+        return true
     }
 
     private fun createRounds(tournament: Tournament){
@@ -411,9 +423,8 @@ class GameService (
 
             tournament.roundGames.add(
                 RoundGame(
-                    game= game,
-                    tournament = tournament,
-                    round = tournament.currentRound
+                    game = game,
+                    tournament = tournament
                 )
             )
         }
@@ -470,9 +481,5 @@ class GameService (
 
     fun findGameById(id: Long): Game? {
         return gameRepository.findGameById(id)
-    }
-
-    fun findTournamentById(id: Long): Tournament? {
-        return tournamentRepository.findById(id).orElse(null)
     }
 }
