@@ -24,7 +24,7 @@ class GameService (
         private const val gameHeight = 19
         private const val gameWidth = 19
         private const val gameNeedToWin = 5
-        private val allowedTournamentPlayersCount = listOf(2,4, 8) //TODO to remove 2
+        private val allowedTournamentPlayersCount = listOf(2, 4, 8) //TODO to remove 2
     }
 
     suspend fun getGameState(
@@ -124,13 +124,14 @@ class GameService (
                 val techWinner = if(player == game.owner) member else game.owner
 
                 val roundGame = roundRepository.findByGame(game) ?: return@withContext false
-                roundGame.game = null
-                roundGame.winner = techWinner
 
-                roundRepository.save(roundGame)
+                setRoundWinner(techWinner, roundGame)
+
+                createNewRoundsIfNeeded(roundGame.tournament)
             }
 
-            deleteGame(game)
+            val updatedGame = gameRepository.findGameById(game.id) ?: return@withContext  false
+            deleteGame(updatedGame)
         }
         return@withContext true
     }
@@ -308,10 +309,12 @@ class GameService (
             if(game.isTournament()) {
                 val roundGame = roundRepository.findByGame(game)
                 if (roundGame != null) {
-                    roundGame.game = null
-                    roundGame.winner = if (game.ownerSymbol == GameSymbol.CROSS) game.owner else game.member
+                    val winner: User? = if (game.ownerSymbol == GameSymbol.CROSS) game.owner else game.member
+                    if(winner == null){
+                        return GameStatus.ZERO_WON
+                    }
 
-                    roundRepository.save(roundGame)
+                    setRoundWinner(winner, roundGame)
 
                     val tournament = roundGame.tournament
                     createNewRoundsIfNeeded(tournament)
@@ -322,13 +325,15 @@ class GameService (
         }
         else
         {
-            if(game.isTournament()){
+            if(game.isTournament()) {
                 val roundGame = roundRepository.findByGame(game)
                 if (roundGame != null) {
-                    roundGame.game = null
-                    roundGame.winner = if (game.ownerSymbol == GameSymbol.ZERO) game.owner else game.member
+                    val winner: User? = if (game.ownerSymbol == GameSymbol.ZERO) game.owner else game.member
+                    if(winner == null){
+                        return GameStatus.ZERO_WON
+                    }
 
-                    roundRepository.save(roundGame)
+                    setRoundWinner(winner, roundGame)
 
                     val tournament = roundGame.tournament
                     createNewRoundsIfNeeded(tournament)
@@ -337,6 +342,13 @@ class GameService (
 
             GameStatus.ZERO_WON
         }
+    }
+
+    private fun setRoundWinner(winner: User, roundGame: RoundGame){
+        roundGame.game = null
+        roundGame.winner = winner
+
+        roundRepository.save(roundGame)
     }
 
     private fun createNewRoundsIfNeeded(tournament: Tournament){
@@ -356,20 +368,30 @@ class GameService (
             }
         }
 
-        val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return
-        // TOURNAMENT WINNER
-        if(winners.size == 1){
-            winners[0].tournament = null
-            userRepository.save(winners[0])
-
-            tournamentRepository.delete(updatedTournament)
-
+        // CHECK TOURNAMENT WINNER
+        if(isTournamentEnded(winners, tournament)){
             return
         }
 
+        val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return
         createRounds(updatedTournament)
 
         tournamentRepository.save(updatedTournament)
+    }
+
+    private fun isTournamentEnded(winners: List<User>, tournament: Tournament): Boolean {
+        if (winners.size > 1) {
+            return false
+        }
+
+        winners[0].tournament = null
+        userRepository.save(winners[0])
+
+        val updatedTournament = tournamentRepository.findById(tournament.id).orElse(null) ?: return false
+
+        tournamentRepository.delete(updatedTournament)
+
+        return true
     }
 
     private fun createRounds(tournament: Tournament){
@@ -395,7 +417,7 @@ class GameService (
 
             tournament.roundGames.add(
                 RoundGame(
-                    game= game,
+                    game = game,
                     tournament = tournament
                 )
             )
